@@ -1,0 +1,5 @@
+.vscode/*
+!.vscode/tasks.json
+free_logs/*.txt
+bin/*.exe
+
