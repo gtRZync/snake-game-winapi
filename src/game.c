@@ -86,6 +86,7 @@ void move_player(DIRECTIONS current_direction, Snake* snake)
         case RIGHT: snake->cx++; break;
         case DOWN:  snake->cy++; break;
     }
+    //! can potentitally use this to detect collision with walls
     if (snake->cx > GRID_WIDTH - 2) snake->cx = GRID_WIDTH - 2;
     if ( snake->cx < 1) snake->cx = 1;
     if (snake->cy > GRID_HEIGHT - 2) snake->cy = GRID_HEIGHT - 2;
@@ -110,7 +111,7 @@ void animate_pellet(lpPellet pellet)
 {
     static float tick = .0f;
     const float TICK_INTERVAL = .3f;
-    const float DELAY = 3.0f;
+    const float DELAY = 2.0f;
     tick += TICK_INTERVAL;
     if(tick >= 1.0f)
     {
