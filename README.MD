@@ -49,9 +49,7 @@ log :
 ## Limitations (for now)
 
 - No self-collision yet
-- No wall collision
 - No restart option
-- No score or game over screen (yet)
 
 ---
 

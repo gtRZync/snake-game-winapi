@@ -18,6 +18,8 @@ typedef struct tagSnake
     RECT rect;
     SnakeNode* head;
     boolean should_grow;
+    boolean is_collided_with_wall;
+    boolean is_moving;
 } Snake;
 
 SnakeNode* create_node(int cx, int cy);
