@@ -83,7 +83,7 @@ log :
 
 ## Screenshot
 
-![Snake Game](resources/assets/screenshots/state_1.png)  
+![Snake Game](resources/assets/screenshots/snake_v2.png)  
 *Pellet is created using WinAPI’s `Ellipse()` — simple but smooth, it's also animated, check screenshots folder*
 
 ---
