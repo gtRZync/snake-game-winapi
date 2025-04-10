@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <time.h>
+#include <math.h>
 
 typedef enum tagDirections
 {
@@ -32,4 +33,21 @@ extern DIRECTIONS current_direction;
 extern int32_t timer_intervalUID; 
 extern int32_t screen_height, screen_width;
 extern int32_t score;
+
+//----------------------------Color section -------------------------------------
+extern COLORREF red;
+extern COLORREF green;
+extern COLORREF blue;
+extern COLORREF white;
+extern COLORREF black;
+extern COLORREF gray;
+extern COLORREF yellow;
+extern COLORREF cyan;
+extern COLORREF magenta;
+extern COLORREF orange;
+extern COLORREF purple;
+extern COLORREF teal;
+extern COLORREF navy;
+extern COLORREF pink;
+extern COLORREF gold;
 #endif

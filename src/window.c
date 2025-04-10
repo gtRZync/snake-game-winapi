@@ -97,7 +97,7 @@ LRESULT CALLBACK GameWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hwnd, &ps);
             render_to_back_buffer(double_buffer.BackBuffer, &pellet, &snake);
-            // game_over(double_buffer.BackBuffer, &snake);
+            game_over(double_buffer.BackBuffer, &snake);
             copy_to_front_buffer(double_buffer.BackBuffer, hdc, screen_width, screen_height);
             EndPaint(hwnd, &ps);
         }break;

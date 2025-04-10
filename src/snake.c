@@ -14,6 +14,8 @@ Snake create_snake(int start_x, int start_y)
         (snk.cy + 1) * TILE_SIZE,
     };
     snk.should_grow = FALSE;
+    snk.is_collided_with_wall = FALSE;
+    snk.is_moving = TRUE;
     return snk;
 }
 
