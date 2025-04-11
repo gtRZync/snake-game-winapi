@@ -91,8 +91,8 @@ log :
 ## Coming Soon
 
 - Sprite-based graphics
-- Self and wall collisions
-- Score tracking and restart/game over screen
+- Self collisions
+- Restart
 - Sound effects?
 
 ---
