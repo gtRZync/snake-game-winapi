@@ -25,11 +25,12 @@ WINBOOL CreateAndSelectFont(HDC hdc, HFONT *hFont, UINT font_size, LPCSTR font_n
         SelectObject(hdc, *hFont);
         SetTextColor(hdc, font_color);
         SetBkMode(hdc, TRANSPARENT);
+        return TRUE;
     }
     else
     {
         MessageBoxW(NULL, L"Font Creation Failed!!", L"Font Error",MB_OK | MB_ICONWARNING);
-        exit(EXIT_FAILURE);
+        return FALSE;
     }
 }
 
@@ -39,5 +40,7 @@ WINBOOL DeleteFont(HFONT *hFont)
     {
         DeleteObject(*hFont);
         *hFont = NULL;
+        return TRUE;
     }
+    return FALSE;
 }

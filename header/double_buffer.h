@@ -3,7 +3,7 @@
 #pragma once
 #include <windows.h>
 
-typedef struct tagDoubleBuffer
+typedef interface tagDoubleBuffer
 {
     HBITMAP screen;
     HDC BackBuffer;

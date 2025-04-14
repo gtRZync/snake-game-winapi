@@ -1,34 +1,32 @@
 #include "window.h"
 #include "../resources/resources.h"
+#include "sprite.h"
+#include "game.h"
 
 int32_t timer_intervalUID = 130;
 int32_t screen_height, screen_width;
-Snake  snake;
-Pellet pellet;
-DIRECTIONS current_direction = RIGHT;
 MSG msg = { };
 int32_t score = 0;
 
-void CreateGameWindow(HINSTANCE hInstance, WNDPROC wndProc, int nShowCmd)
+void CreateGameWindow(Game* game, HINSTANCE hInstance, int nShowCmd)
 {
-    const char CLASS_NAME[] = "Snake_Cls";
-    WNDCLASS wc = { };
-    wc.lpszClassName = CLASS_NAME;
-    wc.lpfnWndProc = wndProc;
-    wc.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_SNAKE_ICON));
-    wc.hCursor = LoadCursor(hInstance, (LPSTR)IDC_ARROW);
-    wc.hInstance = hInstance;
-    
-    if(!RegisterClass(&wc))
+    game->window->CLASS_NAME = "SnakeGameClass";
+    game->window->wc = (WNDCLASS){ };
+    game->window->wc.lpszClassName = game->window->CLASS_NAME;
+    game->window->wc.lpfnWndProc = game->window->gameProc;
+    game->window->wc.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_SNAKE_ICON));
+    game->window->wc.hCursor = LoadCursor(hInstance, (LPSTR)IDC_ARROW);
+    game->window->wc.hInstance = hInstance;
+    if(!RegisterClass(&game->window->wc))
     {
-        MessageBox(NULL, "Error registering class", "Registration error", MB_OK | MB_ICONERROR);
+        MessageBoxW(NULL, L"Error registering class", L"Registration error", MB_OK | MB_ICONERROR);
         exit(EXIT_FAILURE);
     }
 
     
-    HWND hwnd = CreateWindowExA(
+    game->window->hwnd = CreateWindowExA(
         0,
-        CLASS_NAME,
+        game->window->CLASS_NAME,
         "Snake Game",
         WS_OVERLAPPEDWINDOW,
         CW_CENTERED_X,
@@ -38,16 +36,17 @@ void CreateGameWindow(HINSTANCE hInstance, WNDPROC wndProc, int nShowCmd)
         NULL,
         NULL,
         hInstance,
-        NULL
+        game
     );
     
-    if(!hwnd)
+    if(!game->window->hwnd)
     {
-        MessageBox(NULL, "Error creating window", "Creation error", MB_OK | MB_ICONERROR);
+        MessageBoxW(NULL, L"Error creating window", L"Creation error", MB_OK | MB_ICONERROR);
+        game->destroy(game);
         exit(EXIT_FAILURE);
     }
-    ShowWindow(hwnd, nShowCmd);
-    UpdateWindow(hwnd);
+    ShowWindow(game->window->hwnd, nShowCmd);
+    UpdateWindow(game->window->hwnd);
 }
 
 int HandleGameMessages()
@@ -62,6 +61,8 @@ int HandleGameMessages()
 
 LRESULT CALLBACK GameWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
+    Game* game = (Game*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
+
     static DOUBLE_BUFFER double_buffer;
     switch(uMsg)
     {
@@ -76,8 +77,11 @@ LRESULT CALLBACK GameWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 
         case WM_CREATE:
         {
-            init_pellet(&pellet);
-            snake = create_snake(5, 5);
+            CREATESTRUCT* cs = ((CREATESTRUCT*)lParam);
+            game = (Game*)cs->lpCreateParams;
+            SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)game);
+
+            
             SetTimer(hwnd, TIMER_ID, timer_intervalUID, NULL);
             RECT ClientArea;
             if(GetClientRect(hwnd, &ClientArea))
@@ -96,23 +100,27 @@ LRESULT CALLBACK GameWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
         {   
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hwnd, &ps);
-            render_to_back_buffer(double_buffer.BackBuffer, &pellet, &snake);
-            game_over(double_buffer.BackBuffer, &snake);
-            copy_to_front_buffer(double_buffer.BackBuffer, hdc, screen_width, screen_height);
+            renderToBackBuffer(double_buffer.BackBuffer, game->pellet, game->snake);
+            copyToFrontBuffer(double_buffer.BackBuffer, hdc, screen_width, screen_height);
             EndPaint(hwnd, &ps);
         }break;
         
         case WM_KEYDOWN:
         {
-            change_direction(&current_direction, &snake, wParam);
-            if(wParam == VK_ESCAPE) SendMessage(hwnd, WM_CLOSE, wParam, lParam);
+            changeDirection(&game->snake_direction, game->snake, wParam);
+            if(wParam == VK_ESCAPE) SendMessage(hwnd, WM_CLOSE, 0, 0);
         }break;
+
+        case WM_CLOSE:
+        {
+            DestroyWindow(hwnd);
+        }
 
         case WM_TIMER:
         {
-            move_player(current_direction, &snake);
-            eat_pellet(&snake, &pellet);
-            animate_pellet(&pellet);
+            updateSnakePosition(game->snake_direction, game->snake);
+            eatPellet(game->snake, game->pellet);
+            animatePellet(game->pellet);
             InvalidateRect(hwnd, NULL, TRUE);
         }break;
 
@@ -125,9 +133,7 @@ LRESULT CALLBACK GameWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 
         case WM_DESTROY:
         {
-            KillTimer(hwnd, TIMER_ID);
             double_buffer_cleanup(&double_buffer);
-            _free_list(snake.head,"free_logs/free_logs.txt");
             PostQuitMessage(EXIT_SUCCESS);
         }break;
     }

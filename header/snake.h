@@ -3,30 +3,33 @@
 #pragma once
 
 #include "config.h"
+#include "sprite.h"
 
-
-typedef struct SnakeNode
+typedef interface SnakeNode
 {
     int32_t x, y;
     struct SnakeNode* next;
 } SnakeNode;
 
-typedef struct tagSnake
+typedef interface tagSnake
 {
     int32_t cx;
     int32_t cy;
-    RECT rect;
+    RECT head_rect;
+    RECT body;
     SnakeNode* head;
     boolean should_grow;
     boolean is_collided_with_wall;
     boolean is_moving;
+    SPRITE sprite;
 } Snake;
 
-SnakeNode* create_node(int cx, int cy);
-void free_list(SnakeNode* head_ptr);
-void _free_list(SnakeNode* head_ptr, const char* filename);
-void add_head(SnakeNode** head_ptr_ptr, int cx, int cy);
-void remove_tail(SnakeNode** head_ptr_ptr);
-Snake create_snake(int cx, int cy);
+SnakeNode* createNode(int cx, int cy);
+SnakeNode* createSnakeList(int* coords, size_t array_size);  
+void freeSnakeMemory(SnakeNode* head_ptr);
+void logAndFreeSnakeMemory(SnakeNode* head_ptr, const char* filename);
+void addHead(SnakeNode** head_ptr_ptr, int cx, int cy);      
+void removeTail(SnakeNode** head_ptr_ptr);                   
+Snake* createSnake();
 
 #endif

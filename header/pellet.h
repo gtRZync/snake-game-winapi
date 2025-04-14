@@ -3,18 +3,19 @@
 #pragma once
 
 #include "config.h"
+#include "sprite.h"
 
-typedef struct tagPellet
+typedef interface tagPellet
 {
     int32_t cx;
     int32_t cy;
     int8_t scale;
     RECT rect;
-}Pellet, *lpPellet;
+    SPRITE sprite;
+}Pellet;
 
-void init_pellet(lpPellet pellet);
-void set_pellet_coord(lpPellet pellet);
+Pellet* init_pellet();
+void set_pellet_coord(Pellet* pellet);
 int get_rand_min_max(int min, int max);
-
 
 #endif

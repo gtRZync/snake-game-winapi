@@ -4,17 +4,22 @@
 #include <windows.h>
 #include <stdint.h>
 
-typedef struct tagSprites
+typedef interface tagSprites
 {
-    HBITMAP Spritesheet;
-    BITMAP SpriteMetrics;
-    int32_t SpriteHeight;
-    int32_t SpriteWidth;
-    int8_t CurrentRow;
-    int8_t CurrentFrame;
+    HDC memDC;
+    HBITMAP sheet;
+    BITMAP  sheetInfo;
+    uint32_t height;
+    uint32_t width;
+    uint8_t  currentRow;
+    uint8_t  currentFrame;
+    uint8_t  totalFrames_on_x;
+    uint8_t  numrows;
 }SPRITE;
 
-void LoadSprite(SPRITE sprite, LPCSTR filename);
+void ShowLastErrorMessage();
+void SetupSprite(SPRITE* sprite, LPCSTR filepath, uint8_t numrows);
+void SpriteCleanup(SPRITE* sprite);
 
 
 #endif

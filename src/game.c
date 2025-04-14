@@ -1,12 +1,12 @@
 #include "game.h"
 
-void move_snake(Snake* snake, int nextX, int nextY)
+void moveSnake(Snake* snake, int nextX, int nextY)
 {
-    add_head(&snake->head, nextX, nextY); 
+    addHead(&snake->head, nextX, nextY); 
 
     if (snake->is_moving && !snake->should_grow)
     {
-        remove_tail(&snake->head);  
+        removeTail(&snake->head);  
     }
     else
     {
@@ -18,13 +18,13 @@ void move_snake(Snake* snake, int nextX, int nextY)
 }
 
 
-boolean is_collisions_snake_pellet(Snake *snake, lpPellet pellet)
+boolean isCollisionSnakePellet(Snake *snake, Pellet* pellet)
 {
     RECT collision_rect;
-    return (IntersectRect(&collision_rect, &snake->rect, &pellet->rect));
+    return (IntersectRect(&collision_rect, &snake->head_rect, &pellet->rect));
 }
 
-DIRECTIONS get_reverse_direction(DIRECTIONS direction)
+DIRECTIONS getReversedDirection(DIRECTIONS direction)
 {
     switch(direction)
     {
@@ -35,14 +35,14 @@ DIRECTIONS get_reverse_direction(DIRECTIONS direction)
     }
 }
 
-void set_rand_seed()
+void setRandomSeed()
 {
     srand((unsigned) time(NULL));
 }
 
-void eat_pellet(Snake* snake, lpPellet pellet)
+void eatPellet(Snake* snake, Pellet* pellet)
 {
-    if(is_collisions_snake_pellet(snake, pellet))
+    if(isCollisionSnakePellet(snake, pellet))
     {
         set_pellet_coord(pellet);
         score+=1;
@@ -51,7 +51,7 @@ void eat_pellet(Snake* snake, lpPellet pellet)
 }
 
 
-void move_player(DIRECTIONS current_direction, Snake* snake)
+void updateSnakePosition(DIRECTIONS current_direction, Snake* snake)
 {
     if(snake->is_moving)
     {
@@ -63,20 +63,20 @@ void move_player(DIRECTIONS current_direction, Snake* snake)
             case DOWN:  snake->cy++; break;
         }
         if (snake->cx > GRID_WIDTH - 2 || snake->cx < 1 || 
-            snake->cy > GRID_HEIGHT - 2 || snake->cy < 1)
+            snake->cy > GRID_HEIGHT - 2 || snake->cy < 4)
         {
             snake->is_moving = FALSE;
             snake->is_collided_with_wall = TRUE;
-            stop_at_wall(current_direction, snake);
+            stopAtWall(current_direction, snake);
         }
         if(snake->is_moving)
         {
-            move_snake(snake, snake->cx, snake->cy);
+            moveSnake(snake, snake->cx, snake->cy);
         }
     }
 }
 
-void change_direction(DIRECTIONS *current_direction, Snake* snake, WPARAM wParam)
+void changeDirection(DIRECTIONS *current_direction, Snake* snake, WPARAM wParam)
 {
     DIRECTIONS new_direction = *current_direction;
     if (wParam == VK_LEFT && snake->cx > 0) new_direction = LEFT;
@@ -84,16 +84,17 @@ void change_direction(DIRECTIONS *current_direction, Snake* snake, WPARAM wParam
     else if (wParam == VK_UP && snake->cy > 0) new_direction = UP;
     else if (wParam == VK_DOWN && snake->cy < GRID_HEIGHT - 1) new_direction = DOWN;
 
-    if (get_reverse_direction(*current_direction) != new_direction) {
+    if (getReversedDirection(*current_direction) != new_direction) {
         *current_direction = new_direction;
     }
 }
 
-void animate_pellet(lpPellet pellet)
+void animatePellet(Pellet* pellet)
 {
     static float tick = 0.0f;
     const float TICK_INTERVAL = 0.5f;  
     const float DELAY = 4.0f;
+    
 
     tick += TICK_INTERVAL;
 
@@ -117,9 +118,7 @@ float interpolateScale(float start, float end, float t) {
     return start + (end - start) * t;
 }
 
-
-
-void stop_at_wall(DIRECTIONS direction, Snake* snake)
+void stopAtWall(DIRECTIONS direction, Snake* snake)
 {
     switch(direction)
     {
@@ -129,3 +128,56 @@ void stop_at_wall(DIRECTIONS direction, Snake* snake)
         case DOWN:  snake->cy = GRID_HEIGHT - 2; break;
     }
 }
+
+Game* InitializeGame()
+{
+    Game* game = (Game*)malloc(sizeof(Game));
+    if(game == NULL)
+    {
+        MessageBoxW(NULL, L"Memory Allocation for game failed.", L"malloc failed", MB_OK | MB_ICONERROR);
+        exit(EXIT_FAILURE);
+    }
+
+    game->window = (Window*)malloc(sizeof(Window));
+    if(game->window == NULL)
+    {
+        MessageBoxW(NULL, L"Memory Allocation for game->window failed.", L"malloc failed", MB_OK | MB_ICONERROR);
+        exit(EXIT_FAILURE);
+    }
+    game->window->gameProc = GameWindowProc;
+
+    game->isRunning = TRUE;
+    game->state = START;
+    game->createWindow = CreateGameWindow;
+    game->destroy = GameDestroy;
+    game->update = HandleGameMessages;
+
+    game->pellet = init_pellet();
+    game->snake = createSnake();
+    game->snake_direction = RIGHT;
+    
+    return game;
+}
+void GameDestroy(Game* game)
+{
+    if(game)
+    {
+        if(game->snake)
+        {
+            logAndFreeSnakeMemory(game->snake->head,"free_logs/free_logs.txt");
+        }
+        if(game->pellet)
+        {
+            free(game->pellet);
+        }
+        if(game->window)
+        {
+            HWND window = game->window->hwnd;
+            KillTimer(window, TIMER_ID);
+            DestroyWindow(window);
+            free(game->window);
+        }
+        free(game);
+    }
+}
+

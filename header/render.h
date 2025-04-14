@@ -7,14 +7,16 @@
 #include "font.h"
 
 
-void render_grid(HDC hdc);
-void show_score(HDC hdc);
-void draw_snake(HDC hdc, Snake* snake_ptr);
-void draw_pellet(HDC hdc, lpPellet pellet);
-void debug_list(SnakeNode* head_ptr, HDC hdc);
-void render_to_back_buffer(HDC back_buffer, lpPellet pellet, Snake* snake);
-void copy_to_front_buffer(HDC back_buffer, HDC front_buffer, int cx, int cy);
-void game_over(HDC hdc, Snake* snake);
-
+void renderGrid(HDC hdc);
+void showScore(HDC hdc);
+void drawSnake(HDC hdc, Snake* snake);
+void drawPellet(HDC hdc, Pellet* pellet);
+void displaySnakeList(SnakeNode* head_ptr, HDC hdc);
+void renderToBackBuffer(HDC back_buffer, Pellet* pellet, Snake* snake);
+void copyToFrontBuffer(HDC back_buffer, HDC front_buffer, int32_t cx, int32_t cy);
+void gameOver(HDC hdc, Snake* snake);
+void renderSprite(HDC hdc, SPRITE sprite, int32_t cx, int32_t cy, float scale);
+void renderTransparentLayer(HDC hdc, BOOL is_rounded, RECT rect);
+void renderArrowOnStart(HDC hdc, SPRITE sprite, uint8_t cx, uint8_t cy);
 
 #endif 

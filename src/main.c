@@ -1,9 +1,13 @@
-#include "window.h"
+#include "game.h"
 
 GameEntryPoint()
 {
-    CreateGameWindow(hInstance, GameWindowProc, SW_SHOW);
-    HandleGameMessages();
+    Game* game = InitializeGame();
+
+    game->createWindow(game, hInstance, SW_SHOW);
+    game->update(); 
+
+    game->destroy(game);
 
     return (int32_t)msg.wParam;
 }

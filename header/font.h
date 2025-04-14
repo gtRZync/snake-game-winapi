@@ -1,5 +1,5 @@
-#ifndef SPRITE_H
-#define SPRITE_H
+#ifndef FONT_H
+#define FONT_H
 #pragma once
 #include <windows.h>
 

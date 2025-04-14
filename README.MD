@@ -1,6 +1,8 @@
 # Snake Game in C (Windows API)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 ![Made with C](https://img.shields.io/badge/C-WinAPI-blue)
+![Windows Only](https://img.shields.io/badge/Windows-Only-red?logo=windows&logoColor=white)
+
 
 This is a simple **Snake game** coded in pure **C** using the **Windows API** — no external libraries used.  
 Rendering is currently done using **GDI objects**, like `Rectangle` and `Ellipse`, and the snake is implemented as a **linked list**.  

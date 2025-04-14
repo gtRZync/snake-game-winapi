@@ -31,6 +31,7 @@
                 "bin/snake_game.exe",
                 "-lgdi32",
                 "-mwindows",
+                "-lmsimg32",
                 "-s"
             ],
             "group": {
