@@ -20,6 +20,7 @@ void CreateGameWindow(Game* game, HINSTANCE hInstance, int nShowCmd)
     if(!RegisterClass(&game->window->wc))
     {
         MessageBoxW(NULL, L"Error registering class", L"Registration error", MB_OK | MB_ICONERROR);
+        game->destroy(game);
         exit(EXIT_FAILURE);
     }
 

@@ -5,15 +5,21 @@ Snake* createSnake()
     int start_coord[] = {7, 10, 6, 10, 5, 10};
     size_t size = sizeof(start_coord) / sizeof(start_coord[0]);
     Snake* snake = (Snake*)malloc(sizeof(Snake));
-    if(snake == NULL)
+    if(!snake)
     {
         MessageBoxW(NULL, L"Memory Allocation for snake failed.", L"malloc failed", MB_OK | MB_ICONERROR);
-        exit(EXIT_FAILURE);
+        return NULL;
     }
     snake->head = NULL;
+    snake->head = createSnakeList(start_coord, size);
+    if(!snake->head)
+    {
+        MessageBoxW(NULL, L"Memory Allocation for snake->head failed.", L"malloc failed", MB_OK | MB_ICONERROR);
+        SAFE_FREE(snake);
+        return NULL;
+    }
     snake->cx = start_coord[0];
     snake->cy = start_coord[1];
-    snake->head = createSnakeList(start_coord, size);
     snake->head_rect = SETUP_RECT(snake->cx, snake->cy, 1);
     snake->body = SETUP_RECT(0, 0, 0); //! Null rect
     snake->should_grow = FALSE;
@@ -27,7 +33,7 @@ SnakeNode* createSnakeList(int *coords, size_t array_size)
     if(array_size < 1)
     {
         MessageBoxW(NULL, L"Can't have a null-sized array.", L"Array-size Error", MB_OK | MB_ICONWARNING);
-        exit(EXIT_FAILURE);
+        return NULL;
     }
     SnakeNode* head = createNode(coords[0], coords[1]);
     SnakeNode* current = head;
@@ -42,10 +48,10 @@ SnakeNode* createSnakeList(int *coords, size_t array_size)
 SnakeNode* createNode(int cx, int cy)
 {
     SnakeNode* new_node = malloc(sizeof(SnakeNode));
-    if(new_node == NULL)
+    if(!new_node)
     {
         MessageBoxW(NULL, L"Memory Allocation for new_node failed.", L"malloc failed", MB_OK | MB_ICONERROR); 
-        exit(EXIT_FAILURE);
+        return NULL;
     }
     new_node->x = cx;
     new_node->y = cy;
@@ -77,7 +83,7 @@ void logAndFreeSnakeMemory(SnakeNode* head, const char* filename) //! time displ
     {
         MessageBoxW(NULL, L"Failed to open the file. The nodes will still be freed, but no log will be created.", L"Error", MB_ICONERROR | MB_OK);
         freeSnakeMemory(head);
-        exit(EXIT_FAILURE);
+        return;
     }
     if (head)
     {
@@ -105,13 +111,12 @@ void addHead(SnakeNode** head, int cx, int cy)
 
 void removeTail(SnakeNode** head_ptr_ptr)
 {
-    if(*head_ptr_ptr == NULL)
+    if(!*head_ptr_ptr)
         return;
 
     if((*head_ptr_ptr)->next == NULL)
     {
-        free(*head_ptr_ptr);
-        *head_ptr_ptr = NULL;
+        SAFE_FREE(*head_ptr_ptr);
         return;
     }
 
@@ -120,8 +125,7 @@ void removeTail(SnakeNode** head_ptr_ptr)
     {
         current = current->next;
     }
-    free(current->next);
-    current->next = NULL;
+    SAFE_FREE(current->next);
 }
 
 

@@ -7,12 +7,12 @@ void SetupSprite(SPRITE *sprite, LPCSTR filepath, uint8_t numrows)
     if(!sprite->sheet)
     {
         ShowLastErrorMessage();
-        exit(EXIT_FAILURE);
+        return;
     }
     if(GetObject(sprite->sheet, sizeof(sprite->sheetInfo), &sprite->sheetInfo) == 0)
     {
         ShowLastErrorMessage();
-        exit(EXIT_FAILURE);
+        return;
     }
     double frames = (double)(sprite->sheetInfo.bmWidth) / (double)(sprite->sheetInfo.bmHeight / numrows);
     sprite->totalFrames_on_x = (uint8_t)frames;

@@ -132,16 +132,17 @@ void stopAtWall(DIRECTIONS direction, Snake* snake)
 Game* InitializeGame()
 {
     Game* game = (Game*)malloc(sizeof(Game));
-    if(game == NULL)
+    if(!game)
     {
-        MessageBoxW(NULL, L"Memory Allocation for game failed.", L"malloc failed", MB_OK | MB_ICONERROR);
+        FatalAllocError(L"Memory Allocation for game failed.");
         exit(EXIT_FAILURE);
     }
 
     game->window = (Window*)malloc(sizeof(Window));
-    if(game->window == NULL)
+    if(!game->window)
     {
-        MessageBoxW(NULL, L"Memory Allocation for game->window failed.", L"malloc failed", MB_OK | MB_ICONERROR);
+        FatalAllocError(L"Memory Allocation for game->window failed.");
+        GameDestroy(game);
         exit(EXIT_FAILURE);
     }
     game->window->gameProc = GameWindowProc;
@@ -151,13 +152,26 @@ Game* InitializeGame()
     game->createWindow = CreateGameWindow;
     game->destroy = GameDestroy;
     game->update = HandleGameMessages;
+    game->snake_direction = RIGHT;
 
     game->pellet = init_pellet();
+    if(!game->pellet)
+    {
+        FatalAllocError(L"Memory Allocation for game->pellet failed.");
+        GameDestroy(game);
+        exit(EXIT_FAILURE);
+    }
     game->snake = createSnake();
-    game->snake_direction = RIGHT;
+    if(!game->snake)
+    {
+        FatalAllocError(L"Memory Allocation for game->snake failed.");
+        GameDestroy(game);
+        exit(EXIT_FAILURE);
+    }
     
     return game;
 }
+
 void GameDestroy(Game* game)
 {
     if(game)
@@ -165,19 +179,22 @@ void GameDestroy(Game* game)
         if(game->snake)
         {
             logAndFreeSnakeMemory(game->snake->head,"free_logs/free_logs.txt");
+            SAFE_FREE(game->snake);
         }
-        if(game->pellet)
-        {
-            free(game->pellet);
-        }
+        SAFE_FREE(game->pellet);
         if(game->window)
         {
             HWND window = game->window->hwnd;
             KillTimer(window, TIMER_ID);
             DestroyWindow(window);
-            free(game->window);
+            SAFE_FREE(game->window);
         }
-        free(game);
+        SAFE_FREE(game);
     }
+}
+
+void FatalAllocError(LPCWSTR what)
+{
+    MessageBoxW(NULL, what, L"malloc failed", MB_OK | MB_ICONERROR);
 }
 

@@ -46,4 +46,5 @@ float interpolateScale(float start, float end, float t);
 void UpdateGame(Game* game);
 Game* InitializeGame();
 void GameDestroy(Game* game);
+void FatalAllocError(LPCWSTR what);
 #endif

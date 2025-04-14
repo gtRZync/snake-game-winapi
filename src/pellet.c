@@ -6,7 +6,7 @@ Pellet* init_pellet()
     if(pellet == NULL)
     {
         MessageBoxW(NULL, L"Memory Allocation for pellet failed.", L"malloc failed", MB_OK | MB_ICONERROR);
-        exit(EXIT_FAILURE);
+        return NULL;
     }
     set_pellet_coord(pellet);
     pellet->scale = 1;
