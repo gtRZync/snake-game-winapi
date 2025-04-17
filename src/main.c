@@ -5,7 +5,7 @@ GameEntryPoint()
     Game* game = InitializeGame();
 
     game->createWindow(game, hInstance, SW_SHOW);
-    game->update(); 
+    game->update(game); 
 
     game->destroy(game);
 

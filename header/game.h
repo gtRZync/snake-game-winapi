@@ -24,7 +24,7 @@ typedef interface Game
     Pellet* pellet;
     HINSTANCE hInstance;
     void (*createWindow)(interface Game* game, HINSTANCE hInstance, int nShowCmd);
-    int (*update)();
+    int (*update)(interface Game* game);
     void (*destroy)(interface Game* game);
     BOOLEAN isRunning;
     float deltatime;

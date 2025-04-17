@@ -50,12 +50,17 @@ void CreateGameWindow(Game* game, HINSTANCE hInstance, int nShowCmd)
     UpdateWindow(game->window->hwnd);
 }
 
-int HandleGameMessages()
+int HandleGameMessages(Game* game)
 {
-    while(GetMessage(&msg, NULL, 0, 0))
+    while(game->isRunning)
     {
-        TranslateMessage(&msg);
-        DispatchMessage(&msg);
+        if(PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+        {
+            if(msg.message == WM_CLOSE)
+                break;
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
+        }
     }
 }
 
@@ -135,6 +140,7 @@ LRESULT CALLBACK GameWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
         case WM_DESTROY:
         {
             double_buffer_cleanup(&double_buffer);
+            game->isRunning = FALSE;
             PostQuitMessage(EXIT_SUCCESS);
         }break;
     }
