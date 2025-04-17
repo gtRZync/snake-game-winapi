@@ -44,7 +44,7 @@ void eatPellet(Snake* snake, Pellet* pellet)
 {
     if(isCollisionSnakePellet(snake, pellet))
     {
-        set_pellet_coord(pellet);
+        setPelletCoord(pellet);
         score+=1;
         snake->should_grow = TRUE;
     }
@@ -154,7 +154,7 @@ Game* InitializeGame()
     game->update = HandleGameMessages;
     game->snake_direction = RIGHT;
 
-    game->pellet = init_pellet();
+    game->pellet = initPellet();
     if(!game->pellet)
     {
         FatalAllocError(L"Memory Allocation for game->pellet failed.");
