@@ -23,6 +23,7 @@ typedef interface Window
     WNDCLASS wc;
     MSG msg;
     WNDPROC gameProc;
+    HCURSOR hcursor;
     const char* CLASS_NAME;
 }Window;
 

@@ -86,8 +86,6 @@ LRESULT CALLBACK GameWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
             CREATESTRUCT* cs = ((CREATESTRUCT*)lParam);
             game = (Game*)cs->lpCreateParams;
             SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)game);
-
-            
             SetTimer(hwnd, TIMER_ID, timer_intervalUID, NULL);
             RECT ClientArea;
             if(GetClientRect(hwnd, &ClientArea))
@@ -96,8 +94,13 @@ LRESULT CALLBACK GameWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
                 screen_height = ClientArea.bottom - ClientArea.top;
             }
             setup_double_buffer(hwnd, &double_buffer, screen_width, screen_height);
-
         }break;
+
+        case WM_SETCURSOR:
+        {
+            game->window->hcursor = LoadCursor(NULL, (LPSTR)IDC_ARROW);
+            SetCursor(game->window->hcursor);
+        }break; 
 
         case WM_ERASEBKGND:
             return 1;
