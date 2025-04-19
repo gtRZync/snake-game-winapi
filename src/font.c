@@ -44,3 +44,71 @@ WINBOOL DeleteFont(HFONT *hFont)
     }
     return FALSE;
 }
+
+void FetchTextCenteredMetrics(HDC hdc, int* cx, int* cy, LPCWSTR lpString)
+{
+    SIZE buffer;
+    if(GetTextExtentPoint32W(hdc, lpString,lstrlenW(lpString), &buffer))
+    {
+        if(cx)
+            *cx = (screen_width - buffer.cx) / 2;
+        if(cy)
+            *cy = (screen_height - buffer.cy) / 2;
+    }
+}
+
+
+void FetchTextCenteredMetricsA(HDC hdc, int* cx, int* cy, LPCTSTR lpString)
+{
+    SIZE buffer;
+    if(GetTextExtentPoint32(hdc, lpString,lstrlen(lpString), &buffer))
+    {
+        if(cx)
+            *cx = (screen_width - buffer.cx) / 2;
+        if(cy)
+            *cy = (screen_height - buffer.cy) / 2;
+    }
+}
+
+int FetchTextY(HDC hdc, LPCTSTR lpString)
+{
+    SIZE buffer;
+    if(GetTextExtentPoint32(hdc, lpString,lstrlen(lpString), &buffer))
+    {
+        return buffer.cy;
+    }
+    //* should never reach here
+    return -1;
+}
+
+int FetchTextYW(HDC hdc, LPCWSTR lpString)
+{
+    SIZE buffer;
+    if(GetTextExtentPoint32W(hdc, lpString,lstrlenW(lpString), &buffer))
+    {
+        return buffer.cy;
+    }
+    //* should never reach here
+    return -1;
+}
+
+int FetchTextX(HDC hdc, LPCTSTR lpString)
+{
+    SIZE buffer;
+    if(GetTextExtentPoint32(hdc, lpString,lstrlen(lpString), &buffer))
+    {
+        return buffer.cx;
+    }
+    //* should never reach here
+    return -1;
+}
+int FetchTextXW(HDC hdc, LPCWSTR lpString)
+{
+    SIZE buffer;
+    if(GetTextExtentPoint32W(hdc, lpString,lstrlenW(lpString), &buffer))
+    {
+        return buffer.cx;
+    }
+    //* should never reach here
+    return -1;
+}
