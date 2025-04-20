@@ -15,12 +15,13 @@ typedef interface tagSnake
 {
     int32_t cx;
     int32_t cy;
-    RECT head_rect;
+    RECT headRect;
     RECT body;
     SnakeNode* head;
-    boolean should_grow;
-    boolean is_collided_with_wall;
-    boolean is_moving;
+    boolean shouldGrow;
+    boolean isCollidedWithWall;
+    boolean isMoving;
+    boolean isDead;
     SPRITE sprite;
 } Snake;
 

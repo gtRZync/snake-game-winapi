@@ -1,5 +1,24 @@
 #include "render.h"
 
+MenuOptions mainMenu[] = {
+    {L"Start"},
+    {L"Options"},
+    {L"Exit"}
+};
+
+MenuStyle style = 
+{
+    .font_color = champagneSilver,
+    .font_name = "emulogic",
+    .font_size = 54,
+    .glow_color = blue,
+    .padding_x = 10,
+    .padding_y = 20,
+    .spacing = 120,
+    .length = sizeof(mainMenu) / sizeof(mainMenu[0]),
+    .hFont = NULL
+};
+
 void drawSnake(HDC hdc, Snake* snake)
 {
     SnakeNode* current = snake->head;
@@ -10,7 +29,7 @@ void drawSnake(HDC hdc, Snake* snake)
         if(i == snake->head)
         {
             SelectObject(hdc, headBrush);
-            snake->head_rect = SETUP_RECT(i->x,i->y, 1);
+            snake->headRect = SETUP_RECT(i->x,i->y, 1);
         }
         else
         {
@@ -55,15 +74,19 @@ void displaySnakeList(SnakeNode* head_ptr, HDC hdc)
     }
 }
 
-void renderToBackBuffer(HDC back_buffer, Pellet* pellet, Snake* snake)
+void renderToBackBuffer(HWND hwnd, GAMESTATE* state, HDC back_buffer, Pellet* pellet, Snake* snake)
 {
     RECT screen = {0, 0, screen_width, screen_height};
-    FillRect(back_buffer, &screen, (HBRUSH)GetStockObject(BLACK_BRUSH));
-    renderGrid(back_buffer);
-    drawPellet(back_buffer, pellet);
-    drawSnake(back_buffer, snake);
-    showScore(back_buffer);
-    gameOver(back_buffer, snake);
+    FillRect(back_buffer, &screen, (*state == MENU) ? (HBRUSH)CreateSolidBrush(MENU_BG) : (HBRUSH)GetStockObject(BLACK_BRUSH));
+    renderMenu(hwnd, back_buffer, state);
+    if(*state != MENU)
+    {
+        renderGrid(back_buffer);
+        drawPellet(back_buffer, pellet);
+        drawSnake(back_buffer, snake);
+        showScore(back_buffer);
+        gameOver(back_buffer, snake);
+    }
 }
 
 void copyToFrontBuffer(HDC back_buffer, HDC front_buffer, int32_t cx, int32_t cy)
@@ -71,7 +94,18 @@ void copyToFrontBuffer(HDC back_buffer, HDC front_buffer, int32_t cx, int32_t cy
     BitBlt(front_buffer, 0, 0, cx, cy, back_buffer, 0, 0, SRCCOPY);
 }
 
-void renderGrid(HDC hdc )
+void renderMenu(HWND hwnd, HDC hdc, GAMESTATE* state)
+{
+    if(*state == MENU)
+    {
+        COLORREF brushColor = RGB(194,144,48);
+        CreateAndSelectFont(hdc, &style.hFont, -style.font_size, style.font_name, style.font_color);
+        drawMenu(hwnd, hdc, L"SNAKE", mainMenu, style.length, brushColor, style, state);
+        DeleteFont(&style.hFont);
+    }
+}
+
+void renderGrid(HDC hdc)
 {
     HBRUSH even_squareBrush = CreateSolidBrush(darkOrange);
     HBRUSH odd_squareBrush = CreateSolidBrush(lightOrange);
@@ -139,7 +173,7 @@ void showScore(HDC hdc)
 
 void gameOver(HDC hdc, Snake *snake)
 {
-    if(!snake->is_moving)
+    if(!snake->isMoving)
     {
         int32_t center_x, center_y;
         center_x = GRID_WIDTH / 2;
@@ -148,7 +182,7 @@ void gameOver(HDC hdc, Snake *snake)
         CreateAndSelectFont(hdc, &hFont, font_size + 6, "Wobble Board", gray);
         RECT rect = SCALE_RECT(center_x, center_y, 8, 4);
         
-        if(snake->is_collided_with_wall)
+        if(snake->isCollidedWithWall)
         {
             renderTransparentLayer(hdc, TRUE, rect);
             TextOutA(hdc, (center_x - 4) * TILE_SIZE, (center_y) * TILE_SIZE , "GameOver Buddy", 15);

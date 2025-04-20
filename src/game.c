@@ -4,15 +4,15 @@ void moveSnake(Snake* snake, int nextX, int nextY)
 {
     addHead(&snake->head, nextX, nextY); 
 
-    if (snake->is_moving && !snake->should_grow)
+    if (snake->isMoving && !snake->shouldGrow)
     {
         removeTail(&snake->head);  
     }
     else
     {
-        if (snake->should_grow)
+        if (snake->shouldGrow)
         {
-            snake->should_grow = FALSE;
+            snake->shouldGrow = FALSE;
         }
     }
 }
@@ -21,7 +21,7 @@ void moveSnake(Snake* snake, int nextX, int nextY)
 boolean isCollisionSnakePellet(Snake *snake, Pellet* pellet)
 {
     RECT collision_rect;
-    return (IntersectRect(&collision_rect, &snake->head_rect, &pellet->rect));
+    return (IntersectRect(&collision_rect, &snake->headRect, &pellet->rect));
 }
 
 DIRECTIONS getReversedDirection(DIRECTIONS direction)
@@ -46,14 +46,14 @@ void eatPellet(Snake* snake, Pellet* pellet)
     {
         setPelletCoord(pellet);
         score+=1;
-        snake->should_grow = TRUE;
+        snake->shouldGrow = TRUE;
     }
 }
 
 
 void updateSnakePosition(DIRECTIONS current_direction, Snake* snake)
 {
-    if(snake->is_moving)
+    if(snake->isMoving)
     {
         switch(current_direction)
         {
@@ -65,24 +65,24 @@ void updateSnakePosition(DIRECTIONS current_direction, Snake* snake)
         if (snake->cx > GRID_WIDTH - 2 || snake->cx < 1 || 
             snake->cy > GRID_HEIGHT - 2 || snake->cy < 4)
         {
-            snake->is_moving = FALSE;
-            snake->is_collided_with_wall = TRUE;
+            snake->isMoving = FALSE;
+            snake->isCollidedWithWall = TRUE;
             stopAtWall(current_direction, snake);
         }
-        if(snake->is_moving)
+        if(snake->isMoving)
         {
             moveSnake(snake, snake->cx, snake->cy);
         }
     }
 }
 
-void changeDirection(DIRECTIONS *current_direction, Snake* snake, WPARAM wParam)
+void changeDirection(DIRECTIONS *current_direction, Snake* snake)
 {
     DIRECTIONS new_direction = *current_direction;
-    if (wParam == VK_LEFT && snake->cx > 0) new_direction = LEFT;
-    else if (wParam == VK_RIGHT && snake->cx < GRID_WIDTH - 1) new_direction = RIGHT;
-    else if (wParam == VK_UP && snake->cy > 0) new_direction = UP;
-    else if (wParam == VK_DOWN && snake->cy < GRID_HEIGHT - 1) new_direction = DOWN;
+    if (GetAsyncKeyState(VK_LEFT) & 0x8000) new_direction = LEFT;
+    else if (GetAsyncKeyState(VK_RIGHT) & 0x8000) new_direction = RIGHT;
+    else if (GetAsyncKeyState(VK_UP) & 0x8000) new_direction = UP;
+    else if (GetAsyncKeyState(VK_DOWN) & 0x8000) new_direction = DOWN;
 
     if (getReversedDirection(*current_direction) != new_direction) {
         *current_direction = new_direction;
@@ -118,6 +118,19 @@ float interpolateScale(float start, float end, float t) {
     return start + (end - start) * t;
 }
 
+void UpdateGame(Game *game)
+{
+    updateSnakePosition(game->snake_direction, game->snake);
+    eatPellet(game->snake, game->pellet);
+    animatePellet(game->pellet);
+}
+
+void renderGame(Game* game, int32_t cx, int32_t cy)
+{
+    renderToBackBuffer(game->window->hwnd, &game->state, game->buffer->BackBuffer, game->pellet, game->snake);
+    copyToFrontBuffer(game->buffer->BackBuffer, game->window->hdc, cx, cy);
+}
+
 void stopAtWall(DIRECTIONS direction, Snake* snake)
 {
     switch(direction)
@@ -148,19 +161,23 @@ Game* InitializeGame()
     game->window->gameProc = GameWindowProc;
 
     game->isRunning = TRUE;
-    game->state = START;
+    game->state = MENU;
     game->createWindow = CreateGameWindow;
     game->destroy = GameDestroy;
     game->update = HandleGameMessages;
+    game->setupDoubleBuffering = setupDoubleBuffering;
+    game->doubleBufferingCleanup = doubleBufferingCleanup;
+    game->render = renderGame;
     game->snake_direction = RIGHT;
-
-    game->pellet = initPellet();
-    if(!game->pellet)
+    game->deltatime = .0f;
+    game->buffer = (DOUBLE_BUFFER*)malloc(sizeof(DOUBLE_BUFFER));
+    if(!game->buffer)
     {
-        FatalAllocError(L"Memory Allocation for game->pellet failed.");
+        FatalAllocError(L"Memory Allocation for game->buffer failed.");
         GameDestroy(game);
         exit(EXIT_FAILURE);
     }
+    game->pellet = initPellet();
     game->snake = createSnake();
     if(!game->snake)
     {
@@ -182,10 +199,12 @@ void GameDestroy(Game* game)
             SAFE_FREE(game->snake);
         }
         SAFE_FREE(game->pellet);
+        SAFE_FREE(game->buffer);
         if(game->window)
         {
             HWND window = game->window->hwnd;
             KillTimer(window, TIMER_ID);
+            ReleaseDC(window, game->window->hdc);
             DestroyWindow(window);
             SAFE_FREE(game->window);
         }

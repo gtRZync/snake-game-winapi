@@ -1,6 +1,6 @@
 #include "double_buffer.h"
 
-void setup_double_buffer(HWND hwnd, PDOUBLE_BUFFER lpDoubleBuffer, int cx, int cy)
+void setupDoubleBuffering(HWND hwnd, PDOUBLE_BUFFER lpDoubleBuffer, int cx, int cy)
 {
     HDC hdcWindow = GetDC(hwnd);
     lpDoubleBuffer->BackBuffer = CreateCompatibleDC(hdcWindow);
@@ -8,10 +8,9 @@ void setup_double_buffer(HWND hwnd, PDOUBLE_BUFFER lpDoubleBuffer, int cx, int c
     SelectObject(lpDoubleBuffer->BackBuffer, lpDoubleBuffer->screen);
 
     ReleaseDC(hwnd, hdcWindow);
-    DeleteObject(lpDoubleBuffer->screen);
 }
 
-void double_buffer_cleanup(PDOUBLE_BUFFER lpDoubleBuffer)
+void doubleBufferingCleanup(PDOUBLE_BUFFER lpDoubleBuffer)
 {
     if(lpDoubleBuffer->screen)
     {

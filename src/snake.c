@@ -20,11 +20,11 @@ Snake* createSnake()
     }
     snake->cx = start_coord[0];
     snake->cy = start_coord[1];
-    snake->head_rect = SETUP_RECT(snake->cx, snake->cy, 1);
+    snake->headRect = SETUP_RECT(snake->cx, snake->cy, 1);
     snake->body = SETUP_RECT(0, 0, 0); //! Null rect
-    snake->should_grow = FALSE;
-    snake->is_collided_with_wall = FALSE;
-    snake->is_moving = TRUE;
+    snake->shouldGrow = FALSE;
+    snake->isCollidedWithWall = FALSE;
+    snake->isMoving = TRUE;
     return snake;
 }
 

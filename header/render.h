@@ -5,14 +5,15 @@
 #include "snake.h"
 #include "pellet.h"
 #include "font.h"
+#include "menu.h"
 
-
+void renderMenu(HWND hwnd, HDC hdc, GAMESTATE* state);
 void renderGrid(HDC hdc);
 void showScore(HDC hdc);
 void drawSnake(HDC hdc, Snake* snake);
 void drawPellet(HDC hdc, Pellet* pellet);
 void displaySnakeList(SnakeNode* head_ptr, HDC hdc);
-void renderToBackBuffer(HDC back_buffer, Pellet* pellet, Snake* snake);
+void renderToBackBuffer(HWND hwnd, GAMESTATE* state, HDC back_buffer, Pellet* pellet, Snake* snake);
 void copyToFrontBuffer(HDC back_buffer, HDC front_buffer, int32_t cx, int32_t cy);
 void gameOver(HDC hdc, Snake* snake);
 void renderSprite(HDC hdc, SPRITE sprite, int32_t cx, int32_t cy, float scale);

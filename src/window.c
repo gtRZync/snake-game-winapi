@@ -17,6 +17,7 @@ void CreateGameWindow(Game* game, HINSTANCE hInstance, int nShowCmd)
     game->window->wc.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_SNAKE_ICON));
     game->window->wc.hCursor = LoadCursor(hInstance, (LPSTR)IDC_ARROW);
     game->window->wc.hInstance = hInstance;
+    game->window->wc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 3);
     if(!RegisterClass(&game->window->wc))
     {
         MessageBoxW(NULL, L"Error registering class", L"Registration error", MB_OK | MB_ICONERROR);
@@ -48,18 +49,50 @@ void CreateGameWindow(Game* game, HINSTANCE hInstance, int nShowCmd)
     }
     ShowWindow(game->window->hwnd, nShowCmd);
     UpdateWindow(game->window->hwnd);
+    game->window->hdc = GetDC(game->window->hwnd);
+    game->setupDoubleBuffering(game->window->hwnd, game->buffer, screen_width, screen_height);
 }
+
 
 int HandleGameMessages(Game* game)
 {
-    while(game->isRunning)
+    const DWORD frameDelay = 100;
+    DWORD lastFrameTime = GetTickCount();
+
+    while (game->isRunning)
     {
-        if(PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+        while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
         {
-            if(msg.message == WM_CLOSE)
+            if (msg.message == WM_QUIT || msg.message == WM_CLOSE)
+            {
+                game->isRunning = FALSE;
                 break;
+            }
+
             TranslateMessage(&msg);
             DispatchMessage(&msg);
+        }
+        DWORD currentTime = GetTickCount();
+        if (currentTime - lastFrameTime >= frameDelay)
+        {
+            lastFrameTime = currentTime;
+            if (GetAsyncKeyState(VK_ESCAPE) & 0x8000)
+            {
+                PostMessage(game->window->hwnd, WM_CLOSE, 0, 0);
+            }
+
+            // Render
+            game->render(game, screen_width, screen_height);
+            if(game->state != MENU)
+            {
+                // Input
+                changeDirection(&game->snake_direction, game->snake);
+
+                // Update logic
+                UpdateGame(game);
+            }
+            Sleep(1);
+
         }
     }
 }
@@ -69,7 +102,6 @@ LRESULT CALLBACK GameWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 {
     Game* game = (Game*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
 
-    static DOUBLE_BUFFER double_buffer;
     switch(uMsg)
     {
         case WM_NCCREATE:
@@ -86,64 +118,47 @@ LRESULT CALLBACK GameWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
             CREATESTRUCT* cs = ((CREATESTRUCT*)lParam);
             game = (Game*)cs->lpCreateParams;
             SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)game);
-            SetTimer(hwnd, TIMER_ID, timer_intervalUID, NULL);
             RECT ClientArea;
             if(GetClientRect(hwnd, &ClientArea))
             {
                 screen_width = ClientArea.right - ClientArea.left;
                 screen_height = ClientArea.bottom - ClientArea.top;
             }
-            setup_double_buffer(hwnd, &double_buffer, screen_width, screen_height);
         }break;
 
         case WM_SETCURSOR:
         {
-            game->window->hcursor = LoadCursor(NULL, (LPSTR)IDC_ARROW);
-            SetCursor(game->window->hcursor);
+            game->window->cursor = LoadCursor(NULL, (LPSTR)IDC_ARROW);
+            SetCursor(game->window->cursor);
         }break; 
 
         case WM_ERASEBKGND:
             return 1;
 
-        case WM_PAINT:
-        {   
-            PAINTSTRUCT ps;
-            HDC hdc = BeginPaint(hwnd, &ps);
-            renderToBackBuffer(double_buffer.BackBuffer, game->pellet, game->snake);
-            copyToFrontBuffer(double_buffer.BackBuffer, hdc, screen_width, screen_height);
-            EndPaint(hwnd, &ps);
-        }break;
-        
-        case WM_KEYDOWN:
+        case WM_LBUTTONDOWN:
         {
-            changeDirection(&game->snake_direction, game->snake, wParam);
-            if(wParam == VK_ESCAPE) SendMessage(hwnd, WM_CLOSE, 0, 0);
-        }break;
-
-        case WM_CLOSE:
-        {
-            DestroyWindow(hwnd);
-        }
-
-        case WM_TIMER:
-        {
-            updateSnakePosition(game->snake_direction, game->snake);
-            eatPellet(game->snake, game->pellet);
-            animatePellet(game->pellet);
-            InvalidateRect(hwnd, NULL, TRUE);
+            clickedX = LOWORD(lParam);
+            clickedY = HIWORD(lParam);
+            has_clicked = TRUE;
         }break;
 
         case WM_SIZE:
         {
             screen_height = HIWORD(lParam);
             screen_width = LOWORD(lParam);
-            setup_double_buffer(hwnd, &double_buffer, screen_width, screen_height);
+            if(game)
+                game->setupDoubleBuffering(hwnd, game->buffer, screen_width, screen_height);
         }break;
+
+        case WM_CLOSE:
+        {
+            DestroyWindow(hwnd);
+        }break;
+
 
         case WM_DESTROY:
         {
-            double_buffer_cleanup(&double_buffer);
-            game->isRunning = FALSE;
+            game->doubleBufferingCleanup(game->buffer);
             PostQuitMessage(EXIT_SUCCESS);
         }break;
     }

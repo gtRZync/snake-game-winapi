@@ -9,7 +9,7 @@ typedef interface tagDoubleBuffer
     HDC BackBuffer;
 }DOUBLE_BUFFER, *PDOUBLE_BUFFER; 
 
-void setup_double_buffer(HWND hwnd, PDOUBLE_BUFFER lpDoubleBuffer, int cx, int cy);
-void double_buffer_cleanup(PDOUBLE_BUFFER lpDoubleBuffer);
+void setupDoubleBuffering(HWND hwnd, PDOUBLE_BUFFER lpDoubleBuffer, int cx, int cy);
+void doubleBufferingCleanup(PDOUBLE_BUFFER lpDoubleBuffer);
 
 #endif
