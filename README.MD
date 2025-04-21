@@ -1,7 +1,14 @@
 # Snake Game in C (Windows API)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-![Made with C](https://img.shields.io/badge/C-WinAPI-blue)
-![Windows Only](https://img.shields.io/badge/Windows-Only-red?logo=windows&logoColor=white)
+
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-brightgreen.svg)](LICENSE)
+![Made with C](https://img.shields.io/badge/Made%20with-C-00599C.svg)
+![WinAPI](https://img.shields.io/badge/WinAPI-Native-blue.svg)
+![Windows Only](https://img.shields.io/badge/Windows-Only-red.svg?logo=windows&logoColor=white)
+![Repo Size](https://img.shields.io/github/repo-size/gtrZync/snake-game-winapi?color=orange)
+![Last Commit](https://img.shields.io/github/last-commit/gtrZync/snake-game-winapi?color=ff69b4)
+![Top Language](https://img.shields.io/github/languages/top/gtrZync/snake-game-winapi?color=gold)
+
+
 
 
 This is a simple **Snake game** coded in pure **C** using the **Windows API** — no external libraries used.  
@@ -85,7 +92,7 @@ log :
 
 ## Gameplay
 
-![Snake Game](resources/assets/screenshots/gameplay.gif)  
+![Snake Game](resources/assets/screenshots/gameplay+menu.gif)  
 *Pellet is created using WinAPI’s `Ellipse()` — simple but smooth, it's also animated, check screenshots folder*
 
 ---
