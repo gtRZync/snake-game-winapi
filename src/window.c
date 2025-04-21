@@ -54,50 +54,6 @@ void CreateGameWindow(Game* game, HINSTANCE hInstance, int nShowCmd)
 }
 
 
-int HandleGameMessages(Game* game)
-{
-    const DWORD frameDelay = 100;
-    DWORD lastFrameTime = GetTickCount();
-
-    while (game->isRunning)
-    {
-        while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
-        {
-            if (msg.message == WM_QUIT || msg.message == WM_CLOSE)
-            {
-                game->isRunning = FALSE;
-                break;
-            }
-
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-        }
-        DWORD currentTime = GetTickCount();
-        if (currentTime - lastFrameTime >= frameDelay)
-        {
-            lastFrameTime = currentTime;
-            if (GetAsyncKeyState(VK_ESCAPE) & 0x8000)
-            {
-                PostMessage(game->window->hwnd, WM_CLOSE, 0, 0);
-            }
-
-            // Render
-            game->render(game, screen_width, screen_height);
-            if(game->state != MENU)
-            {
-                // Input
-                changeDirection(&game->snake_direction, game->snake);
-
-                // Update logic
-                UpdateGame(game);
-            }
-            Sleep(1);
-
-        }
-    }
-}
-
-
 LRESULT CALLBACK GameWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     Game* game = (Game*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
@@ -147,7 +103,7 @@ LRESULT CALLBACK GameWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
             screen_height = HIWORD(lParam);
             screen_width = LOWORD(lParam);
             if(game)
-                game->setupDoubleBuffering(hwnd, game->buffer, screen_width, screen_height);
+                game->resizeDoubleBuffer(hwnd, game->buffer, screen_width, screen_height);
         }break;
 
         case WM_CLOSE:
@@ -158,7 +114,6 @@ LRESULT CALLBACK GameWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 
         case WM_DESTROY:
         {
-            game->doubleBufferingCleanup(game->buffer);
             PostQuitMessage(EXIT_SUCCESS);
         }break;
     }

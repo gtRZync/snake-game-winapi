@@ -6,10 +6,11 @@
 typedef interface tagDoubleBuffer
 {
     HBITMAP screen;
-    HDC BackBuffer;
-}DOUBLE_BUFFER, *PDOUBLE_BUFFER; 
+    HDC backBuffer;
+}DOUBLE_BUFFER; 
 
-void setupDoubleBuffering(HWND hwnd, PDOUBLE_BUFFER lpDoubleBuffer, int cx, int cy);
-void doubleBufferingCleanup(PDOUBLE_BUFFER lpDoubleBuffer);
+void setupDoubleBuffering(HWND hwnd, DOUBLE_BUFFER* lpDoubleBuffer, int cx, int cy);
+void resizeDoubleBuffer(HWND hwnd, DOUBLE_BUFFER *lpDoubleBuffer, int cx, int cy);
+void doubleBufferingCleanup(DOUBLE_BUFFER* lpDoubleBuffer);
 
 #endif

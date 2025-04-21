@@ -127,8 +127,49 @@ void UpdateGame(Game *game)
 
 void renderGame(Game* game, int32_t cx, int32_t cy)
 {
-    renderToBackBuffer(game->window->hwnd, &game->state, game->buffer->BackBuffer, game->pellet, game->snake);
-    copyToFrontBuffer(game->buffer->BackBuffer, game->window->hdc, cx, cy);
+    renderToBackBuffer(game->window->hwnd, &game->state, game->buffer->backBuffer, game->pellet, game->snake);
+    copyToFrontBuffer(game->buffer->backBuffer, game->window->hdc, cx, cy);
+}
+
+void GameLoop(Game* game)
+{
+    const DWORD frameDelay = 100;
+    DWORD lastFrameTime = GetTickCount();
+
+    while (game->isRunning)
+    {
+        while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+        {
+            if (msg.message == WM_QUIT || msg.message == WM_CLOSE)
+            {
+                game->isRunning = FALSE;
+                break;
+            }
+
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
+        }
+        DWORD currentTime = GetTickCount();
+        if (currentTime - lastFrameTime >= frameDelay)
+        {
+            lastFrameTime = currentTime;
+            if (GetAsyncKeyState(VK_ESCAPE) & 0x8000)
+            {
+                PostMessage(game->window->hwnd, WM_CLOSE, 0, 0);
+            }
+            // Render
+            game->render(game, screen_width, screen_height);
+            if(game->state != MENU)
+            {
+                // Input
+                changeDirection(&game->snake_direction, game->snake);
+
+                // Update logic
+                UpdateGame(game);
+            }
+            Sleep(1);
+        }
+    }
 }
 
 void stopAtWall(DIRECTIONS direction, Snake* snake)
@@ -164,8 +205,9 @@ Game* InitializeGame()
     game->state = MENU;
     game->createWindow = CreateGameWindow;
     game->destroy = GameDestroy;
-    game->update = HandleGameMessages;
+    game->update = GameLoop;
     game->setupDoubleBuffering = setupDoubleBuffering;
+    game->resizeDoubleBuffer = resizeDoubleBuffer;
     game->doubleBufferingCleanup = doubleBufferingCleanup;
     game->render = renderGame;
     game->snake_direction = RIGHT;
@@ -199,7 +241,11 @@ void GameDestroy(Game* game)
             SAFE_FREE(game->snake);
         }
         SAFE_FREE(game->pellet);
-        SAFE_FREE(game->buffer);
+        if(game->buffer)
+        {
+            game->doubleBufferingCleanup(game->buffer);
+            SAFE_FREE(game->buffer);
+        }
         if(game->window)
         {
             HWND window = game->window->hwnd;

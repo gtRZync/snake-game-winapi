@@ -1,16 +1,36 @@
 #include "double_buffer.h"
 
-void setupDoubleBuffering(HWND hwnd, PDOUBLE_BUFFER lpDoubleBuffer, int cx, int cy)
+void setupDoubleBuffering(HWND hwnd, DOUBLE_BUFFER* lpDoubleBuffer, int cx, int cy)
 {
     HDC hdcWindow = GetDC(hwnd);
-    lpDoubleBuffer->BackBuffer = CreateCompatibleDC(hdcWindow);
+    lpDoubleBuffer->backBuffer = CreateCompatibleDC(hdcWindow);
+    if (!lpDoubleBuffer->backBuffer)
+    {
+        MessageBoxW(hwnd, L"Failed to create the back buffer device context.", L"Buffer Creation Error", MB_OK | MB_ICONERROR);
+        return;
+    }
+        
     lpDoubleBuffer->screen = CreateCompatibleBitmap(hdcWindow, cx, cy);
-    SelectObject(lpDoubleBuffer->BackBuffer, lpDoubleBuffer->screen);
+    if (!lpDoubleBuffer->screen)
+    {
+        MessageBoxW(hwnd, L"Failed to create the off-screen bitmap.", L"Bitmap Creation Error", MB_OK | MB_ICONERROR);  
+        DeleteDC(lpDoubleBuffer->backBuffer);
+        return;
+    }
+
+    SelectObject(lpDoubleBuffer->backBuffer, lpDoubleBuffer->screen);
 
     ReleaseDC(hwnd, hdcWindow);
 }
 
-void doubleBufferingCleanup(PDOUBLE_BUFFER lpDoubleBuffer)
+
+void resizeDoubleBuffer(HWND hwnd, DOUBLE_BUFFER *lpDoubleBuffer, int cx, int cy)
+{
+    doubleBufferingCleanup(lpDoubleBuffer);
+    setupDoubleBuffering(hwnd, lpDoubleBuffer, cx, cy);
+}
+
+void doubleBufferingCleanup(DOUBLE_BUFFER* lpDoubleBuffer)
 {
     if(lpDoubleBuffer->screen)
     {
@@ -18,9 +38,9 @@ void doubleBufferingCleanup(PDOUBLE_BUFFER lpDoubleBuffer)
         lpDoubleBuffer->screen = NULL;
     }
 
-    if(lpDoubleBuffer->BackBuffer)
+    if(lpDoubleBuffer->backBuffer)
     {
-        DeleteDC(lpDoubleBuffer->BackBuffer);
-        lpDoubleBuffer->BackBuffer = NULL;
+        DeleteDC(lpDoubleBuffer->backBuffer);
+        lpDoubleBuffer->backBuffer = NULL;
     }
 }

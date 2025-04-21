@@ -37,6 +37,4 @@ extern MSG msg;
 INT APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, INT nShowCmd)
 LRESULT CALLBACK GameWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 void CreateGameWindow(interface Game* game, HINSTANCE hInstance, int nShowCmd);
-int HandleGameMessages(interface Game* game);
-
 #endif

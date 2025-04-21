@@ -18,10 +18,11 @@ typedef interface Game
     DIRECTIONS snake_direction;
 
     void (*createWindow)(interface Game* game, HINSTANCE hInstance, int nShowCmd);
-    int (*update)(interface Game* game);
+    void (*update)(interface Game* game);
     void (*destroy)(interface Game* game);
-    void (*setupDoubleBuffering)(HWND hwnd, PDOUBLE_BUFFER lpDoubleBuffer, int cx, int cy);
-    void (*doubleBufferingCleanup)(PDOUBLE_BUFFER lpDoubleBuffer);
+    void (*setupDoubleBuffering)(HWND hwnd, DOUBLE_BUFFER* lpDoubleBuffer, int cx, int cy);
+    void (*resizeDoubleBuffer)(HWND hwnd, DOUBLE_BUFFER *lpDoubleBuffer, int cx, int cy);
+    void (*doubleBufferingCleanup)(DOUBLE_BUFFER* lpDoubleBuffer);
     void (*render)(interface Game* game, int32_t cx, int32_t cy);
 
     boolean isRunning;
@@ -42,6 +43,7 @@ void stopAtWall(DIRECTIONS direction, Snake* snake);
 float interpolateScale(float start, float end, float t);
 void UpdateGame(Game* game);
 void renderGame(Game* game, int32_t cx, int32_t cy);
+void GameLoop(Game* game);
 Game* InitializeGame();
 void GameDestroy(Game* game);
 void FatalAllocError(LPCWSTR what);
