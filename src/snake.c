@@ -18,13 +18,15 @@ Snake* createSnake()
         SAFE_FREE(snake);
         return NULL;
     }
+    snake->previousX = 0;
+    snake->previousY = 0;
     snake->cx = start_coord[0];
     snake->cy = start_coord[1];
     snake->headRect = SETUP_RECT(snake->cx, snake->cy, 1);
     snake->body = SETUP_RECT(0, 0, 0); //! Null rect
     snake->shouldGrow = FALSE;
-    snake->isCollidedWithWall = FALSE;
     snake->isMoving = TRUE;
+    snake->isDead = FALSE;
     return snake;
 }
 

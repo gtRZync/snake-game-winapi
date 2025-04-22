@@ -17,11 +17,51 @@ void moveSnake(Snake* snake, int nextX, int nextY)
     }
 }
 
-
-boolean isCollisionSnakePellet(Snake *snake, Pellet* pellet)
+void checkSelfCollision(Game* game)
 {
-    RECT collision_rect;
-    return (IntersectRect(&collision_rect, &snake->headRect, &pellet->rect));
+    if(isCollisionSnakeBody(game->snake))
+    {
+        stopAtSelf(game);
+        game->snake->isMoving = FALSE;
+        if(game->state == PLAYING)
+            game->state = GAMEOVER;
+    }
+}
+
+void checkWallCollision(Game* game)
+{
+    if (game->snake->cx > GRID_WIDTH - 2 || game->snake->cx < 1 || 
+        game->snake->cy > GRID_HEIGHT - 2 || game->snake->cy < 4)
+    {
+        stopAtWall(game);
+        game->snake->isMoving = FALSE;
+        if(game->state == PLAYING)
+            game->state = GAMEOVER;
+    }
+}
+
+void checkCollisions(Game* game)
+{
+    checkSelfCollision(game);
+    checkWallCollision(game);
+}
+
+boolean isCollisionSnakeBody(Snake *snake)
+{
+    for(SnakeNode* i = snake->head ; i != NULL ; i = i->next)
+        {
+            if(i->x == snake->cx && i->y == snake->cy)
+            {
+                return TRUE;
+            }
+        }
+    return FALSE;
+}
+
+boolean isCollisionSnakePellet(Game* game)
+{
+    RECT collisionRect;
+    return (IntersectRect(&collisionRect, &game->snake->headRect, &game->pellet->rect));
 }
 
 DIRECTIONS getReversedDirection(DIRECTIONS direction)
@@ -40,43 +80,41 @@ void setRandomSeed()
     srand((unsigned) time(NULL));
 }
 
-void eatPellet(Snake* snake, Pellet* pellet)
+void eatPellet(Game* game)
 {
-    if(isCollisionSnakePellet(snake, pellet))
+    if(isCollisionSnakePellet(game))
     {
-        setPelletCoord(pellet);
+        setPelletCoord(game->pellet);
         score+=1;
-        snake->shouldGrow = TRUE;
+        game->snake->shouldGrow = TRUE;
     }
 }
 
 
-void updateSnakePosition(DIRECTIONS current_direction, Snake* snake)
+void updateSnakePosition(Game* game)
 {
-    if(snake->isMoving)
+    int32_t oldX = game->snake->cx;
+    int32_t oldY = game->snake->cy;
+    if(game->snake->isMoving)
     {
-        switch(current_direction)
+        switch(game->snake_direction)
         {
-            case UP:    snake->cy--; break;
-            case LEFT:  snake->cx--; break;
-            case RIGHT: snake->cx++; break;
-            case DOWN:  snake->cy++; break;
+            case UP:    game->snake->cy--; break;
+            case LEFT:  game->snake->cx--; break;
+            case RIGHT: game->snake->cx++; break;
+            case DOWN:  game->snake->cy++; break;
         }
-        if (snake->cx > GRID_WIDTH - 2 || snake->cx < 1 || 
-            snake->cy > GRID_HEIGHT - 2 || snake->cy < 4)
+        checkCollisions(game);
+        if(game->snake->isMoving)
         {
-            snake->isMoving = FALSE;
-            snake->isCollidedWithWall = TRUE;
-            stopAtWall(current_direction, snake);
-        }
-        if(snake->isMoving)
-        {
-            moveSnake(snake, snake->cx, snake->cy);
+            game->snake->previousX = oldX;
+            game->snake->previousY = oldY;
+            moveSnake(game->snake, game->snake->cx, game->snake->cy);
         }
     }
 }
 
-void changeDirection(DIRECTIONS *current_direction, Snake* snake)
+void changeDirection(DIRECTIONS *current_direction)
 {
     DIRECTIONS new_direction = *current_direction;
     if (GetAsyncKeyState(VK_LEFT) & 0x8000) new_direction = LEFT;
@@ -89,13 +127,13 @@ void changeDirection(DIRECTIONS *current_direction, Snake* snake)
     }
 }
 
-void animatePellet(Pellet* pellet, boolean snakeIsMoving)
+void animatePellet(Game* game)
 {
     static float tick = 0.0f;
     const float TICK_INTERVAL = 0.5f;  
     const float DELAY = 4.0f;
     
-    if(snakeIsMoving)
+    if(game->snake->isMoving)
     {
         tick += TICK_INTERVAL;
     
@@ -104,13 +142,13 @@ void animatePellet(Pellet* pellet, boolean snakeIsMoving)
         }
     
         if (tick < 1.0f) {
-            pellet->scale = interpolateScale(-5.0f, -4.0f, tick); // Larger transition from -5 to -4
+            game->pellet->scale = interpolateScale(-5.0f, -4.0f, tick); // Larger transition from -5 to -4
         } else if (tick < 2.0f) {
-            pellet->scale = interpolateScale(-4.0f, -3.0f, tick - 1.0f); // From -4 to -3
+            game->pellet->scale = interpolateScale(-4.0f, -3.0f, tick - 1.0f); // From -4 to -3
         } else if (tick < 3.0f) {
-            pellet->scale = interpolateScale(-3.0f, -2.0f, tick - 2.0f); // From -3 to -2
+            game->pellet->scale = interpolateScale(-3.0f, -2.0f, tick - 2.0f); // From -3 to -2
         } else {
-            pellet->scale = interpolateScale(-2.0f, -5.0f, tick - 3.0f); // Reverse: from -2 to -5
+            game->pellet->scale = interpolateScale(-2.0f, -5.0f, tick - 3.0f); // Reverse: from -2 to -5
         }
     }
 }
@@ -122,9 +160,9 @@ float interpolateScale(float start, float end, float t) {
 
 void UpdateGame(Game *game)
 {
-    updateSnakePosition(game->snake_direction, game->snake);
-    eatPellet(game->snake, game->pellet);
-    animatePellet(game->pellet, game->snake->isMoving);
+    updateSnakePosition(game);
+    eatPellet(game);
+    animatePellet(game);
 }
 
 void renderGame(Game* game, int32_t cx, int32_t cy)
@@ -165,7 +203,7 @@ void GameLoop(Game* game)
             if(game->state == PLAYING)
             {
                 // Input
-                changeDirection(&game->snake_direction, game->snake);
+                changeDirection(&game->snake_direction);
 
                 // Update logic
                 UpdateGame(game);
@@ -175,14 +213,26 @@ void GameLoop(Game* game)
     }
 }
 
-void stopAtWall(DIRECTIONS direction, Snake* snake)
+void stopAtWall(Game* game)
 {
-    switch(direction)
+    switch(game->snake_direction)
     {
-        case UP:    snake->cy = 1; break;
-        case LEFT:  snake->cx = 1; break;
-        case RIGHT: snake->cx = GRID_WIDTH - 2; break;
-        case DOWN:  snake->cy = GRID_HEIGHT - 2; break;
+        case UP:    game->snake->cy = 1; break;
+        case LEFT:  game->snake->cx = 1; break;
+        case RIGHT: game->snake->cx = GRID_WIDTH - 2; break;
+        case DOWN:  game->snake->cy = GRID_HEIGHT - 2; break;
+    }
+}
+
+
+void stopAtSelf(Game* game)
+{
+    switch(game->snake_direction)
+    {
+        case UP:    game->snake->cy = game->snake->previousY; break;
+        case LEFT:  game->snake->cx = game->snake->previousX; break;
+        case RIGHT: game->snake->cx = game->snake->previousX; break;
+        case DOWN:  game->snake->cy = game->snake->previousY; break;
     }
 }
 

@@ -1,5 +1,5 @@
 #include "font.h"
-int font_size = 16;
+int font_size = 16; //! default font size i chosed
 
 WINBOOL CreateAndSelectFont(HDC hdc, HFONT *hFont, UINT font_size, LPCSTR font_name, COLORREF font_color)
 {

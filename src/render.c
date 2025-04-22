@@ -74,19 +74,32 @@ void displaySnakeList(SnakeNode* head_ptr, HDC hdc)
     }
 }
 
-void renderToBackBuffer(HWND hwnd, GAMESTATE* state, HDC back_buffer, Pellet* pellet, Snake* snake)
+void debugTest(HDC hdc, Snake* snake)
+{
+    HFONT font;
+    CreateAndSelectFont(hdc, &font, font_size + 4, "Jetbrains mono", white);
+    char buffer[128];
+    sprintf(buffer,"snake.cx : %d snake.cy : %d", snake->cx, snake->cy);
+    TextOutA(hdc, 0, 20, buffer, lstrlen(buffer));
+    sprintf(buffer,"prev snake.cx : %d prev snake.cy : %d", snake->previousX, snake->previousY);
+    TextOutA(hdc, 0, 0, buffer, lstrlen(buffer));
+    DeleteFont(&font);
+}
+
+void renderToBackBuffer(HWND hwnd, GAMESTATE* gameState, HDC back_buffer, Pellet* pellet, Snake* snake)
 {
     RECT screen = {0, 0, screen_width, screen_height};
-    FillRect(back_buffer, &screen, (*state == MENU) ? (HBRUSH)CreateSolidBrush(MENU_BG) : (HBRUSH)GetStockObject(BLACK_BRUSH));
-    renderMenu(hwnd, back_buffer, state);
-    if(*state != MENU)
+    FillRect(back_buffer, &screen, (*gameState == MENU) ? (HBRUSH)CreateSolidBrush(MENU_BG) : (HBRUSH)GetStockObject(BLACK_BRUSH));
+    renderMenu(hwnd, back_buffer, gameState);
+    if(*gameState != MENU)
     {
         renderGrid(back_buffer);
         drawPellet(back_buffer, pellet);
         drawSnake(back_buffer, snake);
         showScore(back_buffer);
-        gameOver(back_buffer, snake);
-        renderControlKeys(back_buffer, &keys, state);
+        gameOver(back_buffer, snake, gameState);
+        renderControlKeysOverlay(back_buffer, &keys, gameState);
+        debugTest(back_buffer, snake);
     }
 }
 
@@ -95,9 +108,9 @@ void copyToFrontBuffer(HDC back_buffer, HDC front_buffer, int32_t cx, int32_t cy
     BitBlt(front_buffer, 0, 0, cx, cy, back_buffer, 0, 0, SRCCOPY);
 }
 
-void renderMenu(HWND hwnd, HDC hdc, GAMESTATE* state)
+void renderMenu(HWND hwnd, HDC hdc, GAMESTATE* gameState)
 {
-    if(*state == MENU)
+    if(*gameState == MENU)
     {
         int32_t topPart = renderTitle(hdc, &title, 1.2f);
         COLORREF brushColor = golden_brown;
@@ -167,13 +180,13 @@ void showScore(HDC hdc)
     }
     HFONT hFont = NULL;
     char buffer[16];
-    CreateAndSelectFont(hdc, &hFont, font_size + 4, "Wobble Board", teal);
+    CreateAndSelectFont(hdc, &hFont, font_size + 8, "Wobble Board", teal);
     sprintf(buffer, "Score : %d", score);
-    TextOutA(hdc, (GRID_WIDTH - 6) * TILE_SIZE, TILE_SIZE, buffer, lstrlen(buffer));
+    TextOutA(hdc, (GRID_WIDTH - 7) * TILE_SIZE, TILE_SIZE, buffer, lstrlen(buffer));
     DeleteFont(&hFont);
 }
 
-void gameOver(HDC hdc, Snake *snake)
+void gameOver(HDC hdc, Snake *snake, GAMESTATE* gameState)
 {
     if(!snake->isMoving)
     {
@@ -184,7 +197,7 @@ void gameOver(HDC hdc, Snake *snake)
         CreateAndSelectFont(hdc, &hFont, font_size + 6, "Wobble Board", gray);
         RECT rect = SCALE_RECT(center_x, center_y, 8, 4);
         
-        if(snake->isCollidedWithWall)
+        if(*gameState == GAMEOVER)
         {
             renderTransparentLayer(hdc, TRUE, rect);
             TextOutA(hdc, (center_x - 4) * TILE_SIZE, (center_y) * TILE_SIZE , "GameOver Buddy", 15);
@@ -249,9 +262,9 @@ void renderTransparentLayer(HDC hdc, BOOL is_rounded, RECT rect)
         SelectClipRgn(hdc, NULL);
 }
 
-void renderControlKeys(HDC hdc, SPRITE* sprite, GAMESTATE* state)
+void renderControlKeysOverlay(HDC hdc, SPRITE* sprite, GAMESTATE* gameState)
 {
-    if(*state == WAIT_MOVE_INPUT && sprite)
+    if(*gameState == WAIT_MOVE_INPUT && sprite)
     {    
         int32_t center_x, center_y;
         center_x = GRID_WIDTH / 2;

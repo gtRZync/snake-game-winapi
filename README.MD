@@ -57,7 +57,6 @@ log :
 
 ## Limitations (for now)
 
-- No self-collision yet
 - No restart option
 
 ---
@@ -100,7 +99,6 @@ log :
 ## Coming Soon
 
 - Sprite-based graphics
-- Self collisions
 - Restart
 - Sound effects?
 
