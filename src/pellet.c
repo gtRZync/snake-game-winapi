@@ -9,8 +9,9 @@ Pellet* initPellet()
         return NULL;
     }
     setPelletCoord(pellet);
-    pellet->scale = 1;
+    pellet->scale = 2;
     pellet->rect = SETUP_RECT(pellet->cx, pellet->cy, 1);
+    pellet->sprite = (SPRITE){ };
     
     return pellet;
 }

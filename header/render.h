@@ -19,7 +19,7 @@ void displaySnakeList(SnakeNode* head_ptr, HDC hdc);
 void renderToBackBuffer(HWND hwnd, GAMESTATE* gameState, HDC back_buffer, Pellet* pellet, Snake* snake);
 void copyToFrontBuffer(HDC back_buffer, HDC front_buffer, int32_t cx, int32_t cy);
 void gameOver(HDC hdc, Snake* snake, GAMESTATE* gameState);
-void renderSprite(HDC hdc, SPRITE* sprite, uint32_t cx, uint32_t cy, float scale);
+void renderSprite(HDC hdc, SPRITE* sprite, uint32_t cx, uint32_t cy, float scale, UINT transparentColorKey);
 void renderTransparentLayer(HDC hdc, BOOL is_rounded, RECT rect);
 void renderControlKeysOverlay(HDC hdc, SPRITE* sprite, GAMESTATE* gameState);
 int32_t renderTitle(HDC hdc, SPRITE* sprite, float scaleFactor);

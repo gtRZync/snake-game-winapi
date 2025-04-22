@@ -9,7 +9,7 @@ typedef interface tagPellet
 {
     int32_t cx;
     int32_t cy;
-    int8_t scale;
+    float scale;
     RECT rect;
     SPRITE sprite;
 }Pellet;

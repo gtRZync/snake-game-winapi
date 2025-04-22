@@ -24,6 +24,12 @@ void drawSnake(HDC hdc, Snake* snake)
     SnakeNode* current = snake->head;
     HBRUSH headBrush = CreateSolidBrush(SNAKE_HEAD_COLOR);
     HBRUSH bodyBrush = CreateSolidBrush(SNAKE_BODY_COLOR);
+    SelectObject(hdc, GetStockObject(NULL_PEN));
+
+    COLORREF borderColor =  RGB(17 ,61 ,62); 
+    HPEN pen = CreatePen(PS_SOLID, 2, borderColor);
+    SelectObject(hdc, pen);
+    
     for(SnakeNode* i = snake->head; i != NULL; i = i->next)
     {
         if(i == snake->head)
@@ -40,23 +46,26 @@ void drawSnake(HDC hdc, Snake* snake)
     }
     DeleteObject(headBrush);
     DeleteObject(bodyBrush);
+    DeleteObject(pen);
 }
 
 void drawPellet(HDC hdc, Pellet* pellet)
 {
-    pellet->rect = SETUP_RECT(pellet->cx, pellet->cy, 1);
-    HBRUSH hBrush = CreateSolidBrush(red);
-    HGDIOBJ oldBrush = SelectObject(hdc, hBrush);
-    SelectObject(hdc, GetStockObject(NULL_PEN));
-    Ellipse(hdc,
-        pellet->rect.left - pellet->scale,
-        pellet->rect.top - pellet->scale,
-        pellet->rect.right + pellet->scale,
-        pellet->rect.bottom + pellet->scale
-        );
+    // Compute the center of the tile
+    int32_t centerX = pellet->cx * TILE_SIZE + TILE_SIZE / 2;
+    int32_t centerY = pellet->cy * TILE_SIZE + TILE_SIZE / 2;
 
-    SelectObject(hdc, oldBrush);
-    DeleteObject(hBrush);
+    pellet->rect = SETUP_RECT(pellet->cx, pellet->cy, 1);
+
+    // Compute scaled sprite size
+    int scaledW = pellet->sprite.width * pellet->scale;
+    int scaledH = pellet->sprite.height * pellet->scale;
+
+    // Position so the sprite's center stays at the tile center
+    int drawX = centerX - scaledW / 2;
+    int drawY = centerY - scaledH / 2;
+
+    renderSprite(hdc, &pellet->sprite, drawX, drawY, pellet->scale, turquoise);
 }
 
 void displaySnakeList(SnakeNode* head_ptr, HDC hdc)
@@ -193,7 +202,7 @@ void gameOver(HDC hdc, Snake *snake, GAMESTATE* gameState)
     }
 }
 
-void renderSprite(HDC hdc, SPRITE* sprite, uint32_t cx, uint32_t cy, float scale)
+void renderSprite(HDC hdc, SPRITE* sprite, uint32_t cx, uint32_t cy, float scale, UINT transparentColorKey)
 {
     sprite->memDC = CreateCompatibleDC(hdc);
     SelectObject(sprite->memDC, sprite->sheet);
@@ -202,7 +211,7 @@ void renderSprite(HDC hdc, SPRITE* sprite, uint32_t cx, uint32_t cy, float scale
     uint32_t frame_y = sprite->currentRow * sprite->height;
 
     RECT src = {frame_x , frame_y, frame_x + sprite->width, frame_y + sprite->height};
-    RECT dst = {cx, cy, (cx + sprite->width) * scale, (cy + sprite->height) * scale};
+    RECT dst = {cx, cy, cx + sprite->width * scale, cy + sprite->height * scale};
 
     uint32_t wSrc = src.right - src.left;
     uint32_t hSrc =  src.bottom - src.top;
@@ -210,7 +219,19 @@ void renderSprite(HDC hdc, SPRITE* sprite, uint32_t cx, uint32_t cy, float scale
     uint32_t wDest = dst.right - dst.left;
     uint32_t hDest =  dst.bottom - dst.top;
 
-    TransparentBlt(hdc, dst.left, dst.top,wDest, hDest, sprite->memDC, src.left, src.top, wSrc, hSrc, black);
+    TransparentBlt(
+        hdc, 
+        dst.left, 
+        dst.top,
+        wDest, 
+        hDest, 
+        sprite->memDC, 
+        src.left, 
+        src.top,
+        wSrc, 
+        hSrc, 
+        transparentColorKey
+    );
     DeleteDC(sprite->memDC);
 }
 
@@ -263,7 +284,7 @@ void renderControlKeysOverlay(HDC hdc, SPRITE* sprite, GAMESTATE* gameState)
         int32_t cy = (screen_height - sprite->height) / 2;
 
         renderTransparentLayer(hdc, TRUE, rect);
-        renderSprite(hdc, sprite, cx, cy + 50, 1.f);
+        renderSprite(hdc, sprite, cx, cy + 50, 1.f, black);
     }
 }
 
@@ -275,7 +296,7 @@ int32_t renderTitle(HDC hdc, SPRITE *sprite, float scaleFactor)
 
         uint32_t titleY = (screen_height - (sprite->height * scaleFactor)) / 20;
 
-        renderSprite(hdc, sprite, titleX , titleY, scaleFactor);
+        renderSprite(hdc, sprite, titleX , titleY, scaleFactor, black);
 
         return titleY + (sprite->height * scaleFactor);
     }

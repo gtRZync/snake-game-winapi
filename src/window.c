@@ -120,6 +120,7 @@ LRESULT CALLBACK GameWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
         {
             SpriteCleanup(&title);
             SpriteCleanup(&keys);
+            SpriteCleanup(&game->pellet->sprite);
             PostQuitMessage(EXIT_SUCCESS);
         }break;
     }

@@ -63,6 +63,7 @@ extern boolean has_clicked, startClicked;
 #define SNAKE_BODY_COLOR RGB(139, 69, 19)    // SaddleBrown
 #define champagneSilver  RGB(230, 232, 234)
 #define MENU_BG          RGB(36,94,99)
+#define turquoise        RGB(0, 162, 232) 
 
 //------------------- Defining scales ---------------------------------
 //! maybe in da future

@@ -142,13 +142,13 @@ void animatePellet(Game* game)
         }
     
         if (tick < 1.0f) {
-            game->pellet->scale = interpolateScale(-5.0f, -4.0f, tick); // Larger transition from -5 to -4
+            game->pellet->scale = interpolateScale(2.0f, 2.6f, tick); 
         } else if (tick < 2.0f) {
-            game->pellet->scale = interpolateScale(-4.0f, -3.0f, tick - 1.0f); // From -4 to -3
+            game->pellet->scale = interpolateScale(2.6f, 3.0f, tick - 1.0f); 
         } else if (tick < 3.0f) {
-            game->pellet->scale = interpolateScale(-3.0f, -2.0f, tick - 2.0f); // From -3 to -2
+            game->pellet->scale = interpolateScale(3.0f, 2.6f, tick - 2.0f); 
         } else {
-            game->pellet->scale = interpolateScale(-2.0f, -5.0f, tick - 3.0f); // Reverse: from -2 to -5
+            game->pellet->scale = interpolateScale(2.6f, 2.0f, tick - 3.0f); 
         }
     }
 }
@@ -313,11 +313,12 @@ void startGame(Game *game)
         prepareGame(game);
         startClicked = FALSE;
         game->state = WAIT_MOVE_INPUT;
+        SetupSprite(&game->pellet->sprite, "resources/assets/sprites/apple_1.bmp", 1, 1);
     }
     if(game && game->state == WAIT_MOVE_INPUT)
     {
         if(
-            (GetAsyncKeyState(VK_UP) & 0x8000) ||
+            (GetAsyncKeyState(VK_UP) & 0x8000)   ||
             (GetAsyncKeyState(VK_DOWN) & 0x8000) || 
             (GetAsyncKeyState(VK_LEFT) & 0x8000) ||
             (GetAsyncKeyState(VK_RIGHT) & 0x8000))
