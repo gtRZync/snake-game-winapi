@@ -3,6 +3,7 @@
 #pragma once 
 #include <windows.h>
 #include <stdint.h>
+#include <stdio.h>
 
 typedef interface tagSprites
 {
@@ -13,12 +14,14 @@ typedef interface tagSprites
     uint32_t width;
     uint8_t  currentRow;
     uint8_t  currentFrame;
-    uint8_t  totalFrames_on_x;
-    uint8_t  numrows;
+    uint8_t  totalCols;
+    uint8_t  totalRows;
 }SPRITE;
 
-void ShowLastErrorMessage();
-void SetupSprite(SPRITE* sprite, LPCSTR filepath, uint8_t numrows);
+void ShowLastErrorMessage(const char* where);
+void SetupSprite(SPRITE* sprite, LPCSTR filepath, uint8_t rows, uint8_t cols);
+void setSpriteRow(SPRITE* sprite, uint8_t rowIndex);
+void setSpriteFrame(SPRITE* sprite, uint8_t frameIndex);
 void SpriteCleanup(SPRITE* sprite);
 
 

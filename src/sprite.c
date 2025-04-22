@@ -1,23 +1,43 @@
 #include "sprite.h"
 
-void SetupSprite(SPRITE *sprite, LPCSTR filepath, uint8_t numrows)
+void SetupSprite(SPRITE* sprite, LPCSTR filepath, uint8_t rows, uint8_t cols)
 {
-    sprite->numrows = numrows;
+    sprite->totalRows = rows;
+    sprite->totalCols = cols;
     sprite->sheet = LoadImageA(NULL, filepath, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     if(!sprite->sheet)
     {
-        ShowLastErrorMessage();
-        return;
+        ShowLastErrorMessage("sprite->sheet");
+        return;//TODO: handle egde cases, destroy the game if sprite can't be loaded
     }
     if(GetObject(sprite->sheet, sizeof(sprite->sheetInfo), &sprite->sheetInfo) == 0)
     {
-        ShowLastErrorMessage();
+        ShowLastErrorMessage("sprite->sheetInfo");
         return;
     }
-    double frames = (double)(sprite->sheetInfo.bmWidth) / (double)(sprite->sheetInfo.bmHeight / numrows);
-    sprite->totalFrames_on_x = (uint8_t)frames;
-    sprite->width = sprite->sheetInfo.bmWidth / sprite->totalFrames_on_x;
-    sprite->height = sprite->sheetInfo.bmHeight / sprite->numrows;
+    sprite->width = sprite->sheetInfo.bmWidth / sprite->totalCols;
+    sprite->height = sprite->sheetInfo.bmHeight / sprite->totalRows;
+    if(sprite->width <= 0 ||sprite->height <= 0)
+    {
+        ShowLastErrorMessage("sprite->width/height");
+        return;
+    }
+}
+
+void setSpriteRow(SPRITE *sprite, uint8_t rowIndex)
+{
+    if(sprite->totalRows >=rowIndex)
+    {
+        sprite->currentRow = rowIndex;
+    }
+}
+
+void setSpriteFrame(SPRITE *sprite, uint8_t frameIndex)
+{
+    if(sprite->totalCols >= frameIndex)
+    {
+        sprite->currentFrame = frameIndex;
+    }
 }
 
 void SpriteCleanup(SPRITE *sprite)
@@ -38,9 +58,10 @@ void SpriteCleanup(SPRITE *sprite)
     }
 }
 
-void ShowLastErrorMessage()
+void ShowLastErrorMessage(const char* where)
 {
     char errorMessage[128];
+    char caption[128];
     DWORD error = GetLastError();
 
     FormatMessage(
@@ -52,6 +73,6 @@ void ShowLastErrorMessage()
         sizeof(errorMessage),
         NULL
         );
-
-    MessageBoxA(NULL, errorMessage, "Last Error Message", MB_OK | MB_ICONERROR);
+    sprintf(caption, "Error Message from %s", where);
+    MessageBoxA(NULL, errorMessage, caption, MB_OK | MB_ICONERROR);
 }
