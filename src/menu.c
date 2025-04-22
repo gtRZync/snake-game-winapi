@@ -1,7 +1,7 @@
 #include "menu.h"
 
 int clickedX, clickedY;
-boolean has_clicked;
+boolean has_clicked = FALSE, startClicked = FALSE;
 
 void addGlowing(HDC hdc, UINT font_size, LPCSTR font_name, COLORREF font_color, LPCWSTR text, int y, int x_offset, int y_offset)
 {
@@ -23,22 +23,15 @@ void addGlowing(HDC hdc, UINT font_size, LPCSTR font_name, COLORREF font_color, 
 }
 
 
-void drawMenu(HWND hwnd, HDC hdc, const wchar_t* Title, MenuOptions* options, uint8_t n_options, COLORREF rectBrushColor, MenuStyle style, GAMESTATE *state)
+void drawMenu(HWND hwnd, HDC hdc, uint32_t topPart, MenuOptions* options, uint8_t n_options, COLORREF rectBrushColor, MenuStyle style)
 {
     int maxTextWidth = 0;
-
-    // Title positioning
-    int hTitle = FetchTextYW(hdc, Title);
-    int titleY = (screen_height - hTitle) / 20;
-    int topPart = titleY + hTitle;
     int totalHeight = n_options * style.spacing;
     int startY = (screen_height - (totalHeight - topPart)) / 2;
 
     HFONT font;
-    HBRUSH brush = CreateSolidBrush(rectBrushColor);
+    HBRUSH brush = CreateSolidBrush(rectBrushColor); 
     SelectObject(hdc, brush);
-
-    DrawCenteredTextForMenu(hdc, Title, titleY);
 
     for (int i = 0; i < n_options; i++) {
         int w = FetchTextXW(hdc, options[i].text);
@@ -81,7 +74,7 @@ void drawMenu(HWND hwnd, HDC hdc, const wchar_t* Title, MenuOptions* options, ui
     
     if (has_clicked) {
         for (int i = 0; i < n_options; i++) {
-            detectClick(hwnd, rect[i], i, state, clickedX, clickedY);
+            detectClick(hwnd, rect[i], i, clickedX, clickedY);
         }
         has_clicked = FALSE;
     }
@@ -92,14 +85,14 @@ void drawMenu(HWND hwnd, HDC hdc, const wchar_t* Title, MenuOptions* options, ui
     DeleteFont(&font);
 }
 
-void detectClick(HWND hwnd, RECT rect, uint8_t id, GAMESTATE *state, int clickedX, int clickedY)
+void detectClick(HWND hwnd, RECT rect, uint8_t id, int clickedX, int clickedY)
 {
     if(clickedX > rect.left && clickedX < rect.right && clickedY > rect.top && clickedY < rect.bottom)
     {
         switch(id)
         {
             case 0:
-                *state = PLAYING;
+                startClicked = TRUE;
                 break;
 
             case 1:

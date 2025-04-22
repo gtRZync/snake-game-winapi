@@ -4,7 +4,6 @@
 #define TILE_SIZE 32
 #define GRID_WIDTH  26
 #define GRID_HEIGHT 19 
-#define TIMER_ID 1
 
 #include <windows.h>
 #include <stdio.h>
@@ -28,6 +27,7 @@ typedef enum tagDirections
 typedef enum tagGameStates
 {
     MENU,
+    WAIT_MOVE_INPUT,
     PLAYING,
     PAUSED,
     GAMEOVER
@@ -37,7 +37,7 @@ extern int32_t timer_intervalUID;
 extern int32_t screen_height, screen_width;
 extern int32_t score;
 extern int clickedX, clickedY;
-extern boolean has_clicked;
+extern boolean has_clicked, startClicked;
 
 //----------------------------Color section -------------------------------------
 #define red              RGB(255, 0, 0)
@@ -58,6 +58,7 @@ extern boolean has_clicked;
 #define pink             RGB(255, 192, 203)
 #define gold             RGB(255, 215, 0)
 #define copperRed        RGB(183, 80, 48)
+#define golden_brown     RGB(194,144,48);
 #define SNAKE_HEAD_COLOR RGB(85, 107, 47)    // Olive
 #define SNAKE_BODY_COLOR RGB(139, 69, 19)    // SaddleBrown
 #define champagneSilver  RGB(230, 232, 234)

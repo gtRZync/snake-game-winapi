@@ -31,20 +31,22 @@ typedef interface Game
 
 
 void setRandomSeed();
+Game* InitializeGame();
+void FatalAllocError(LPCWSTR what);
 DIRECTIONS getReversedDirection(DIRECTIONS direction);
+float interpolateScale(float start, float end, float t);
 void moveSnake(Snake* snake, int nextX, int nextY);
 boolean is_collision_snake_body(Snake* snake);
 boolean isCollisionSnakePellet(Snake* snake, Pellet* pellet);
 void eatPellet(Snake* snake, Pellet* pellet);
 void updateSnakePosition(DIRECTIONS current_direction, Snake* snake);
 void changeDirection(DIRECTIONS* current_direction, Snake* snake);
-void animatePellet(Pellet* pellet);
 void stopAtWall(DIRECTIONS direction, Snake* snake);
-float interpolateScale(float start, float end, float t);
+void animatePellet(Pellet* pellet, boolean snakeIsMoving);
 void UpdateGame(Game* game);
 void renderGame(Game* game, int32_t cx, int32_t cy);
 void GameLoop(Game* game);
-Game* InitializeGame();
 void GameDestroy(Game* game);
-void FatalAllocError(LPCWSTR what);
+void prepareGame(Game *game);
+void startGame(Game* game);
 #endif

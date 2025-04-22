@@ -89,27 +89,29 @@ void changeDirection(DIRECTIONS *current_direction, Snake* snake)
     }
 }
 
-void animatePellet(Pellet* pellet)
+void animatePellet(Pellet* pellet, boolean snakeIsMoving)
 {
     static float tick = 0.0f;
     const float TICK_INTERVAL = 0.5f;  
     const float DELAY = 4.0f;
     
-
-    tick += TICK_INTERVAL;
-
-    if(tick >= DELAY) {
-        tick = fmod(tick, DELAY);
-    }
-
-    if (tick < 1.0f) {
-        pellet->scale = interpolateScale(-5.0f, -4.0f, tick); // Larger transition from -5 to -4
-    } else if (tick < 2.0f) {
-        pellet->scale = interpolateScale(-4.0f, -3.0f, tick - 1.0f); // From -4 to -3
-    } else if (tick < 3.0f) {
-        pellet->scale = interpolateScale(-3.0f, -2.0f, tick - 2.0f); // From -3 to -2
-    } else {
-        pellet->scale = interpolateScale(-2.0f, -5.0f, tick - 3.0f); // Reverse: from -2 to -5
+    if(snakeIsMoving)
+    {
+        tick += TICK_INTERVAL;
+    
+        if(tick >= DELAY) {
+            tick = fmod(tick, DELAY);
+        }
+    
+        if (tick < 1.0f) {
+            pellet->scale = interpolateScale(-5.0f, -4.0f, tick); // Larger transition from -5 to -4
+        } else if (tick < 2.0f) {
+            pellet->scale = interpolateScale(-4.0f, -3.0f, tick - 1.0f); // From -4 to -3
+        } else if (tick < 3.0f) {
+            pellet->scale = interpolateScale(-3.0f, -2.0f, tick - 2.0f); // From -3 to -2
+        } else {
+            pellet->scale = interpolateScale(-2.0f, -5.0f, tick - 3.0f); // Reverse: from -2 to -5
+        }
     }
 }
 
@@ -122,7 +124,7 @@ void UpdateGame(Game *game)
 {
     updateSnakePosition(game->snake_direction, game->snake);
     eatPellet(game->snake, game->pellet);
-    animatePellet(game->pellet);
+    animatePellet(game->pellet, game->snake->isMoving);
 }
 
 void renderGame(Game* game, int32_t cx, int32_t cy)
@@ -159,7 +161,8 @@ void GameLoop(Game* game)
             }
             // Render
             game->render(game, screen_width, screen_height);
-            if(game->state != MENU)
+            startGame(game);
+            if(game->state == PLAYING)
             {
                 // Input
                 changeDirection(&game->snake_direction, game->snake);
@@ -219,16 +222,59 @@ Game* InitializeGame()
         GameDestroy(game);
         exit(EXIT_FAILURE);
     }
-    game->pellet = initPellet();
-    game->snake = createSnake();
-    if(!game->snake)
-    {
-        FatalAllocError(L"Memory Allocation for game->snake failed.");
-        GameDestroy(game);
-        exit(EXIT_FAILURE);
-    }
+    game->snake = NULL;
+    game->pellet = NULL;
     
     return game;
+}
+
+void prepareGame(Game *game)
+{
+    if(game)
+    {
+        //!Reset game
+        if(game->snake && game->pellet)
+        {
+            if(game->snake)
+            {
+                logAndFreeSnakeMemory(game->snake->head,"free_logs/free_logs.txt");
+                SAFE_FREE(game->snake);
+            }
+            SAFE_FREE(game->pellet);
+        }
+        if(game->snake == NULL && game->pellet == NULL)
+        {
+            game->pellet = initPellet();
+            game->snake = createSnake();
+            if(!game->snake)
+            {
+                FatalAllocError(L"Memory Allocation for game->snake failed.");
+                GameDestroy(game);
+                exit(EXIT_FAILURE);
+            }
+        }
+    }
+}
+
+void startGame(Game *game)
+{
+    if(game && game->state == MENU && startClicked)
+    {
+        prepareGame(game);
+        startClicked = FALSE;
+        game->state = WAIT_MOVE_INPUT;
+    }
+    if(game && game->state == WAIT_MOVE_INPUT)
+    {
+        if(
+            (GetAsyncKeyState(VK_UP) & 0x8000) ||
+            (GetAsyncKeyState(VK_DOWN) & 0x8000) || 
+            (GetAsyncKeyState(VK_LEFT) & 0x8000) ||
+            (GetAsyncKeyState(VK_RIGHT) & 0x8000))
+            {
+                game->state = PLAYING;
+            }
+    }
 }
 
 void GameDestroy(Game* game)
@@ -249,7 +295,6 @@ void GameDestroy(Game* game)
         if(game->window)
         {
             HWND window = game->window->hwnd;
-            KillTimer(window, TIMER_ID);
             ReleaseDC(window, game->window->hdc);
             DestroyWindow(window);
             SAFE_FREE(game->window);

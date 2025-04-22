@@ -1,12 +1,12 @@
 #include "render.h"
 
-MenuOptions mainMenu[] = {
+static MenuOptions mainMenu[] = {
     {L"Start"},
     {L"Options"},
     {L"Exit"}
 };
 
-MenuStyle style = 
+static MenuStyle style = 
 {
     .font_color = champagneSilver,
     .font_name = "emulogic",
@@ -86,6 +86,7 @@ void renderToBackBuffer(HWND hwnd, GAMESTATE* state, HDC back_buffer, Pellet* pe
         drawSnake(back_buffer, snake);
         showScore(back_buffer);
         gameOver(back_buffer, snake);
+        renderControlKeys(back_buffer, &keys, state);
     }
 }
 
@@ -98,9 +99,10 @@ void renderMenu(HWND hwnd, HDC hdc, GAMESTATE* state)
 {
     if(*state == MENU)
     {
-        COLORREF brushColor = RGB(194,144,48);
+        int32_t topPart = renderTitle(hdc, &title, 1.2f);
+        COLORREF brushColor = golden_brown;
         CreateAndSelectFont(hdc, &style.hFont, -style.font_size, style.font_name, style.font_color);
-        drawMenu(hwnd, hdc, L"SNAKE", mainMenu, style.length, brushColor, style, state);
+        drawMenu(hwnd, hdc, topPart, mainMenu, style.length, brushColor, style);
         DeleteFont(&style.hFont);
     }
 }
@@ -191,25 +193,25 @@ void gameOver(HDC hdc, Snake *snake)
     }
 }
 
-void renderSprite(HDC hdc, SPRITE sprite, int32_t cx, int32_t cy, float scale)
+void renderSprite(HDC hdc, SPRITE* sprite, uint32_t cx, uint32_t cy, float scale)
 {
-    sprite.memDC = CreateCompatibleDC(hdc);
-    SelectObject(sprite.memDC, sprite.sheet);
+    sprite->memDC = CreateCompatibleDC(hdc);
+    SelectObject(sprite->memDC, sprite->sheet);
 
-    int32_t frame_x = sprite.currentFrame * sprite.width;
-    int32_t frame_y = sprite.currentRow * sprite.height;
+    uint32_t frame_x = sprite->currentFrame * sprite->width;
+    uint32_t frame_y = sprite->currentRow * sprite->height;
 
-    RECT src = {frame_x , frame_y, frame_x + sprite.width, frame_y + sprite.height};
-    RECT dst = {cx, cy, cx + scale, cy + scale};
+    RECT src = {frame_x , frame_y, frame_x + sprite->width, frame_y + sprite->height};
+    RECT dst = {cx, cy, (cx + sprite->width) * scale, (cy + sprite->height) * scale};
 
-    int32_t wSrc = src.right - src.left;
-    int32_t hSrc =  src.bottom - src.top;
+    uint32_t wSrc = src.right - src.left;
+    uint32_t hSrc =  src.bottom - src.top;
 
-    int32_t wDest = dst.right - dst.left;
-    int32_t hDest =  dst.bottom - dst.top;
+    uint32_t wDest = dst.right - dst.left;
+    uint32_t hDest =  dst.bottom - dst.top;
 
-    TransparentBlt(hdc, dst.left, dst.top,wDest, hDest, sprite.memDC, src.left, src.top, wSrc, hSrc, black);
-    DeleteDC(sprite.memDC);
+    TransparentBlt(hdc, dst.left, dst.top,wDest, hDest, sprite->memDC, src.left, src.top, wSrc, hSrc, black);
+    DeleteDC(sprite->memDC);
 }
 
 void renderTransparentLayer(HDC hdc, BOOL is_rounded, RECT rect)
@@ -247,9 +249,35 @@ void renderTransparentLayer(HDC hdc, BOOL is_rounded, RECT rect)
         SelectClipRgn(hdc, NULL);
 }
 
-void renderArrowOnStart(HDC hdc, SPRITE sprite, uint8_t cx, uint8_t cy)
+void renderControlKeys(HDC hdc, SPRITE* sprite, GAMESTATE* state)
 {
-    RECT rect = SCALE_RECT(cx, cy, 4, 3);
-    renderTransparentLayer(hdc, TRUE, rect);
-    renderSprite(hdc, sprite, cx, cy, 2.0f);
+    if(*state == WAIT_MOVE_INPUT && sprite)
+    {    
+        int32_t center_x, center_y;
+        center_x = GRID_WIDTH / 2;
+        center_y = ((GRID_HEIGHT) / 2) + 2;
+
+        RECT rect = SCALE_RECT(center_x, center_y, 6, 4);
+
+        int32_t cx = (screen_width - (sprite->width)) / 2;
+        int32_t cy = (screen_height - sprite->height) / 2;
+
+        renderTransparentLayer(hdc, TRUE, rect);
+        renderSprite(hdc, sprite, cx, cy + 50, 1.f);
+    }
+}
+
+int32_t renderTitle(HDC hdc, SPRITE *sprite, float scaleFactor)
+{
+    if(sprite)
+    {
+        uint32_t titleX = (screen_width - (sprite->width * scaleFactor)) / 2;
+
+        uint32_t titleY = (screen_height - (sprite->height * scaleFactor)) / 20;
+
+        renderSprite(hdc, sprite, titleX , titleY, scaleFactor);
+
+        return titleY + (sprite->height * scaleFactor);
+    }
+    return -1;
 }

@@ -7,6 +7,8 @@ int32_t timer_intervalUID = 130;
 int32_t screen_height, screen_width;
 MSG msg = { };
 int32_t score = 0;
+SPRITE title;
+SPRITE keys;
 
 void CreateGameWindow(Game* game, HINSTANCE hInstance, int nShowCmd)
 {
@@ -80,6 +82,8 @@ LRESULT CALLBACK GameWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
                 screen_width = ClientArea.right - ClientArea.left;
                 screen_height = ClientArea.bottom - ClientArea.top;
             }
+            SetupSprite(&title, "resources/assets/sprites/snake_banner.bmp", 1, 1);
+            SetupSprite(&keys, "resources/assets/sprites/keys.bmp", 1, 1);
         }break;
 
         case WM_SETCURSOR:
@@ -91,7 +95,7 @@ LRESULT CALLBACK GameWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
         case WM_ERASEBKGND:
             return 1;
 
-        case WM_LBUTTONDOWN:
+        case WM_LBUTTONUP:
         {
             clickedX = LOWORD(lParam);
             clickedY = HIWORD(lParam);
@@ -114,6 +118,8 @@ LRESULT CALLBACK GameWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 
         case WM_DESTROY:
         {
+            SpriteCleanup(&title);
+            SpriteCleanup(&keys);
             PostQuitMessage(EXIT_SUCCESS);
         }break;
     }
