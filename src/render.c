@@ -74,18 +74,6 @@ void displaySnakeList(SnakeNode* head_ptr, HDC hdc)
     }
 }
 
-void debugTest(HDC hdc, Snake* snake)
-{
-    HFONT font;
-    CreateAndSelectFont(hdc, &font, font_size + 4, "Jetbrains mono", white);
-    char buffer[128];
-    sprintf(buffer,"snake.cx : %d snake.cy : %d", snake->cx, snake->cy);
-    TextOutA(hdc, 0, 20, buffer, lstrlen(buffer));
-    sprintf(buffer,"prev snake.cx : %d prev snake.cy : %d", snake->previousX, snake->previousY);
-    TextOutA(hdc, 0, 0, buffer, lstrlen(buffer));
-    DeleteFont(&font);
-}
-
 void renderToBackBuffer(HWND hwnd, GAMESTATE* gameState, HDC back_buffer, Pellet* pellet, Snake* snake)
 {
     RECT screen = {0, 0, screen_width, screen_height};
@@ -99,7 +87,6 @@ void renderToBackBuffer(HWND hwnd, GAMESTATE* gameState, HDC back_buffer, Pellet
         showScore(back_buffer);
         gameOver(back_buffer, snake, gameState);
         renderControlKeysOverlay(back_buffer, &keys, gameState);
-        debugTest(back_buffer, snake);
     }
 }
 
