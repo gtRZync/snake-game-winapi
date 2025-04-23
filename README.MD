@@ -13,7 +13,7 @@
 
 This is a simple **Snake game** coded in pure **C** using the **Windows API** — no external libraries used.  
 Rendering is currently done using **GDI objects**, like `Rectangle` and `Ellipse`, and the snake is implemented as a **linked list**.  
-Right now, it’s all about the basics — but sprite support is coming soon.
+Right now, it’s all about the basics — more sprite support yet to come.
 
 ---
 
@@ -21,8 +21,8 @@ Right now, it’s all about the basics — but sprite support is coming soon.
 
 - Classic Snake gameplay
 - Pure Win32 API (no SDL, no OpenGL, no dependencies)
-- Snake and pellet rendered using GDI objects
-- Animated pellet using the `Ellipse()` function
+- Snake and pellet rendered using GDI objects and custom functions
+- Animated Sprite pellet
 - Snake body handled with a linked list
 - Collision detection with pellets
 - Node-freeing system with logging (see below)
@@ -91,14 +91,13 @@ log :
 
 ## Gameplay
 
-![Snake Game](resources/assets/screenshots/gameplay_v2.gif)  
-*Pellet is created using WinAPI’s `Ellipse()` — simple but smooth, it's also animated*
+![Snake Game](resources/assets/screenshots/gameplay_v3.gif)  
 
 ---
 
 ## Coming Soon
 
-- Sprite-based graphics
+- More sprite-based graphics
 - Restart
 - Sound effects?
 
