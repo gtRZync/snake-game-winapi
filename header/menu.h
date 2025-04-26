@@ -2,7 +2,7 @@
 #define MENU_H
 #pragma once
 
-#include "config.h"
+#include "utilis.h"
 #include "font.h"
 
 typedef interface tagStyle
@@ -23,10 +23,10 @@ typedef interface tagMenu
     const wchar_t* text;
 }MenuOptions;
 
-void drawMenu(HWND hwnd, HDC hdc, uint32_t topPart, MenuOptions* options, uint8_t n_options, COLORREF rectBrushColor, MenuStyle styles);
+void drawMenu(HWND hwnd, HDC hdc, uint32_t topPart, MenuOptions* options, uint8_t n_options, COLORREF rectBrushColor, const MenuStyle* styles);
 void DrawCenteredTextForMenu(HDC hdc, LPCWSTR lpString, int starting_y);
-void detectClick(HWND hwnd, RECT rect, uint8_t id, int clickedX, int clickedY);
-void addGlowing(HDC hdc, UINT font_size, LPCSTR font_name, COLORREF font_color, LPCWSTR text, int y, int x_offset, int y_offset);
+void handleClick(HWND hwnd, const RECT* rect, uint8_t id, const POINT* mouse);
+void addGlowing(HDC hdc, const MenuStyle* style, COLORREF font_color, LPCWSTR text, int32_t y, int32_t x_offset, int32_t y_offset);
 
 
 

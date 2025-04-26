@@ -1,11 +1,11 @@
 #ifndef FONT_H
 #define FONT_H
 #pragma once
-#include "config.h"
+#include "utilis.h"
 
 extern int font_size;
 
-WINBOOL CreateAndSelectFont(HDC hdc, HFONT* hFont, UINT font_size, LPCSTR font_name, COLORREF font_color);
+HFONT CreateAndSelectFont(HDC hdc, HFONT* hFont, UINT font_size, LPCSTR font_name, COLORREF font_color);
 WINBOOL DeleteFont(HFONT* hFont);
 int FetchTextYW(HDC hdc, LPCWSTR lpString);
 int FetchTextY(HDC hdc, LPCTSTR lpString);

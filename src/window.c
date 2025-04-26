@@ -3,12 +3,6 @@
 #include "sprite.h"
 #include "game.h"
 
-int32_t timer_intervalUID = 130;
-int32_t screen_height, screen_width;
-MSG msg = { };
-int32_t score = 0;
-SPRITE title;
-SPRITE keys;
 
 void CreateGameWindow(Game* game, HINSTANCE hInstance, int nShowCmd)
 {
@@ -84,6 +78,7 @@ LRESULT CALLBACK GameWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
             }
             SetupSprite(&title, "resources/assets/sprites/snake_banner.bmp", 1, 1);
             SetupSprite(&keys, "resources/assets/sprites/keys.bmp", 1, 1);
+            SetupSprite(&sound, "resources/assets/sprites/sound.bmp", 1, 2);
         }break;
 
         case WM_SETCURSOR:
@@ -97,9 +92,13 @@ LRESULT CALLBACK GameWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 
         case WM_LBUTTONUP:
         {
-            clickedX = LOWORD(lParam);
-            clickedY = HIWORD(lParam);
             has_clicked = TRUE;
+            POINT mouse;
+            GetCursorPos(&mouse);
+            if(isPointInRect(&audioRect, mouse.x, mouse.y))
+            {
+                game->isMuted = !game->isMuted;
+            }
         }break;
 
         case WM_SIZE:
@@ -120,6 +119,7 @@ LRESULT CALLBACK GameWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
         {
             SpriteCleanup(&title);
             SpriteCleanup(&keys);
+            SpriteCleanup(&sound);
             SpriteCleanup(&game->pellet->sprite);
             PostQuitMessage(EXIT_SUCCESS);
         }break;

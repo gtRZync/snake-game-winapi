@@ -19,7 +19,7 @@ typedef interface tagSprites
 }SPRITE;
 
 void ShowLastErrorMessage(const char* where);
-void SetupSprite(SPRITE* sprite, LPCSTR filepath, uint8_t rows, uint8_t cols);
+void SetupSprite(SPRITE *sprite, LPCSTR filepath, uint8_t totalRows, uint8_t totalCols);
 void setSpriteRow(SPRITE* sprite, uint8_t rowIndex);
 void setSpriteFrame(SPRITE* sprite, uint8_t frameIndex);
 void SpriteCleanup(SPRITE* sprite);

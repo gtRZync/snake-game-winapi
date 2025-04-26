@@ -1,7 +1,7 @@
 #include "font.h"
 int font_size = 16; //! default font size i chosed
 
-WINBOOL CreateAndSelectFont(HDC hdc, HFONT *hFont, UINT font_size, LPCSTR font_name, COLORREF font_color)
+HFONT CreateAndSelectFont(HDC hdc, HFONT *hFont, UINT font_size, LPCSTR font_name, COLORREF font_color)
 {
     *hFont = CreateFontA(
         font_size,
@@ -22,15 +22,15 @@ WINBOOL CreateAndSelectFont(HDC hdc, HFONT *hFont, UINT font_size, LPCSTR font_n
 
     if(*hFont)
     {
-        SelectObject(hdc, *hFont);
+        HFONT oldFont =(HFONT)SelectObject(hdc, *hFont);
         SetTextColor(hdc, font_color);
         SetBkMode(hdc, TRANSPARENT);
-        return TRUE;
+        return oldFont;
     }
     else
     {
         MessageBoxW(NULL, L"Font Creation Failed!!", L"Font Error",MB_OK | MB_ICONWARNING);
-        return FALSE;
+        return NULL;
     }
 }
 

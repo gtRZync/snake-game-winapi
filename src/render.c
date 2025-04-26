@@ -1,5 +1,14 @@
 #include "render.h"
 
+int32_t timer_intervalUID = 130;
+int32_t screen_height, screen_width;
+MSG msg = { };
+int32_t score = 0;
+SPRITE title;
+SPRITE keys;
+SPRITE sound;
+RECT audioRect;
+
 static MenuOptions mainMenu[] = {
     {L"Start"},
     {L"Options"},
@@ -21,29 +30,28 @@ static MenuStyle style =
 
 void drawSnake(HDC hdc, Snake* snake)
 {
-    SnakeNode* current = snake->head;
     HBRUSH headBrush = CreateSolidBrush(SNAKE_HEAD_COLOR);
     HBRUSH bodyBrush = CreateSolidBrush(SNAKE_BODY_COLOR);
-    SelectObject(hdc, GetStockObject(NULL_PEN));
+    HBRUSH oldBrush = SelectObject(hdc, GetStockObject(NULL_BRUSH));
 
     COLORREF borderColor =  RGB(17 ,61 ,62); 
     HPEN pen = CreatePen(PS_SOLID, 2, borderColor);
-    SelectObject(hdc, pen);
+    HGDIOBJ oldPen = (HPEN) SelectObject(hdc, pen);
+
+    HGDIOBJ oldHeadBrush = SelectObject(hdc, headBrush);
+    snake->headRect = SETUP_RECT(snake->head->x,snake->head->y, 1);
+    Ellipse(hdc, snake->headRect.left, snake->headRect.top, snake->headRect.right, snake->headRect.bottom);
     
-    for(SnakeNode* i = snake->head; i != NULL; i = i->next)
+    SelectObject(hdc , bodyBrush);
+    for(SnakeNode* i = snake->head->next ; i != NULL; i = i->next)
     {
-        if(i == snake->head)
-        {
-            SelectObject(hdc, headBrush);
-            snake->headRect = SETUP_RECT(i->x,i->y, 1);
-        }
-        else
-        {
-            SelectObject(hdc , bodyBrush);
-        }
         snake->body = SETUP_RECT(i->x, i->y, 1);
         Ellipse(hdc, snake->body.left, snake->body.top, snake->body.right, snake->body.bottom);
     }
+
+    SelectObject(hdc, oldPen);
+    SelectObject(hdc, oldBrush);
+
     DeleteObject(headBrush);
     DeleteObject(bodyBrush);
     DeleteObject(pen);
@@ -86,14 +94,16 @@ void displaySnakeList(SnakeNode* head_ptr, HDC hdc)
 void renderToBackBuffer(HWND hwnd, GAMESTATE* gameState, HDC back_buffer, Pellet* pellet, Snake* snake)
 {
     RECT screen = {0, 0, screen_width, screen_height};
-    FillRect(back_buffer, &screen, (*gameState == MENU) ? (HBRUSH)CreateSolidBrush(MENU_BG) : (HBRUSH)GetStockObject(BLACK_BRUSH));
+    HBRUSH hBrush =  CreateSolidBrush(MENU_BG);
+    FillRect(back_buffer, &screen, hBrush);
+    DeleteObject(hBrush);
     renderMenu(hwnd, back_buffer, gameState);
     if(*gameState != MENU)
     {
         renderGrid(back_buffer);
         drawPellet(back_buffer, pellet);
         drawSnake(back_buffer, snake);
-        showScore(back_buffer);
+        showScore(back_buffer, &pellet->sprite);
         gameOver(back_buffer, snake, gameState);
         renderControlKeysOverlay(back_buffer, &keys, gameState);
     }
@@ -104,14 +114,17 @@ void copyToFrontBuffer(HDC back_buffer, HDC front_buffer, int32_t cx, int32_t cy
     BitBlt(front_buffer, 0, 0, cx, cy, back_buffer, 0, 0, SRCCOPY);
 }
 
-void renderMenu(HWND hwnd, HDC hdc, GAMESTATE* gameState)
+void renderMenu(HWND hwnd, HDC hdc, const GAMESTATE* gameState)
 {
     if(*gameState == MENU)
     {
-        int32_t topPart = renderTitle(hdc, &title, 1.2f);
+        uint32_t titleY;
+        int32_t topPart = renderTitle(hdc, &title, &titleY, 1.2f);
+        // renderSoundIcon(hdc, &sound, titleY, 8.f, &audioRect);
         COLORREF brushColor = golden_brown;
-        CreateAndSelectFont(hdc, &style.hFont, -style.font_size, style.font_name, style.font_color);
-        drawMenu(hwnd, hdc, topPart, mainMenu, style.length, brushColor, style);
+        HFONT oldFont = CreateAndSelectFont(hdc, &style.hFont, -style.font_size, style.font_name, style.font_color);
+        drawMenu(hwnd, hdc, topPart, mainMenu, style.length, brushColor, &style);
+        SelectObject(hdc, oldFont);
         DeleteFont(&style.hFont);
     }
 }
@@ -121,37 +134,45 @@ void renderGrid(HDC hdc)
     HBRUSH even_squareBrush = CreateSolidBrush(darkOrange);
     HBRUSH odd_squareBrush = CreateSolidBrush(lightOrange);
     HBRUSH wallBrush = CreateSolidBrush(copperRed);
-    for(int y = 3 ; y < GRID_HEIGHT ; y++)
+    HBRUSH panelBrush = CreateSolidBrush(RGB(100,77,31)); //rgb(100,77,31)
+    for(int y = 0 ; y < GRID_HEIGHT ; y++)
     {
         
         for(int x = 0 ; x < GRID_WIDTH ; x++)
         {
             RECT rect = SETUP_RECT(x, y, 1);
-            if(x == 0 || x == GRID_WIDTH - 1 || y == 3 || y == GRID_HEIGHT - 1 )
+            if( y < 3)
             {
-                FillRect(hdc, &rect, wallBrush);
+                FillRect(hdc, &rect, panelBrush);
             }
             else
             {
-                if(y % 2 == 0){
-                    if(x % 2 == 0)
-                    {
-                        FillRect(hdc, &rect, even_squareBrush);
-                    }
-                    else
-                    {
-                        FillRect(hdc, &rect, odd_squareBrush);
-                    }
+                if(x == 0 || x == GRID_WIDTH - 1 || y == 3 || y == GRID_HEIGHT - 1 )
+                {
+                    FillRect(hdc, &rect, wallBrush);
                 }
                 else
                 {
-                    if(x % 2 != 0)
-                    {
-                        FillRect(hdc, &rect, even_squareBrush);
+                    if(y % 2 == 0){
+                        if(x % 2 == 0)
+                        {
+                            FillRect(hdc, &rect, even_squareBrush);
+                        }
+                        else
+                        {
+                            FillRect(hdc, &rect, odd_squareBrush);
+                        }
                     }
                     else
                     {
-                        FillRect(hdc, &rect, odd_squareBrush);
+                        if(x % 2 != 0)
+                        {
+                            FillRect(hdc, &rect, even_squareBrush);
+                        }
+                        else
+                        {
+                            FillRect(hdc, &rect, odd_squareBrush);
+                        }
                     }
                 }
             }
@@ -160,25 +181,17 @@ void renderGrid(HDC hdc)
     DeleteObject(even_squareBrush);
     DeleteObject(odd_squareBrush);
     DeleteObject(wallBrush);
+    DeleteObject(panelBrush);
 }
 
-void showScore(HDC hdc)
+void showScore(HDC hdc, SPRITE* sprite)
 {
-    HBRUSH panelBrush = CreateSolidBrush(RGB(100,77,31));
-    for(int y = 0 ; y < 3 ; y++)
-    {
-        
-        for(int x = 0 ; x < GRID_WIDTH ; x++)
-        {
-            RECT rect = SETUP_RECT(x, y, 1);
-            FillRect(hdc, &rect, panelBrush);
-        }
-    }
     HFONT hFont = NULL;
     char buffer[16];
-    CreateAndSelectFont(hdc, &hFont, font_size + 8, "Wobble Board", teal);
+    HFONT oldFont = CreateAndSelectFont(hdc, &hFont, font_size + 8, "Wobble Board", teal);
     sprintf(buffer, "Score : %d", score);
     TextOutA(hdc, (GRID_WIDTH - 7) * TILE_SIZE, TILE_SIZE, buffer, lstrlen(buffer));
+    SelectObject(hdc, oldFont);
     DeleteFont(&hFont);
 }
 
@@ -205,7 +218,7 @@ void gameOver(HDC hdc, Snake *snake, GAMESTATE* gameState)
 void renderSprite(HDC hdc, SPRITE* sprite, uint32_t cx, uint32_t cy, float scale, UINT transparentColorKey)
 {
     sprite->memDC = CreateCompatibleDC(hdc);
-    SelectObject(sprite->memDC, sprite->sheet);
+    HGDIOBJ oldBitmap =  SelectObject(sprite->memDC, sprite->sheet);
 
     uint32_t frame_x = sprite->currentFrame * sprite->width;
     uint32_t frame_y = sprite->currentRow * sprite->height;
@@ -288,17 +301,28 @@ void renderControlKeysOverlay(HDC hdc, SPRITE* sprite, GAMESTATE* gameState)
     }
 }
 
-int32_t renderTitle(HDC hdc, SPRITE *sprite, float scaleFactor)
+int32_t renderTitle(HDC hdc, SPRITE *sprite, uint32_t* Ycoord, float scaleFactor)
 {
     if(sprite)
     {
         uint32_t titleX = (screen_width - (sprite->width * scaleFactor)) / 2;
 
         uint32_t titleY = (screen_height - (sprite->height * scaleFactor)) / 20;
+        *Ycoord = titleY;
 
         renderSprite(hdc, sprite, titleX , titleY, scaleFactor, black);
 
         return titleY + (sprite->height * scaleFactor);
     }
     return -1;
+}
+
+void renderSoundIcon(HDC hdc, SPRITE *sprite, uint32_t iconY, float scaleFactor, RECT* audio)
+{
+    if(sprite)
+    {
+        uint32_t iconX = (screen_width - (sprite->width * scaleFactor));
+        *audio = (RECT){iconX, iconY, iconX + sprite->width * scaleFactor, iconY + sprite->height * scaleFactor};
+        renderSprite(hdc, sprite, iconX , iconY, scaleFactor, red);
+    }
 }

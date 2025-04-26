@@ -13,7 +13,7 @@
 #define CW_CENTERED_Y ((GetSystemMetrics(SM_CYSCREEN) - WINDOW_HEIGHT) / 2)
 
 #include "double_buffer.h"
-#include "config.h"
+#include "utilis.h"
 
 interface Game;
 

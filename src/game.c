@@ -160,6 +160,7 @@ float interpolateScale(float start, float end, float t) {
 
 void UpdateGame(Game *game)
 {
+    playGameSound(&game->state, &sound, game->isMuted);
     updateSnakePosition(game);
     eatPellet(game);
     animatePellet(game);
@@ -196,6 +197,10 @@ void GameLoop(Game* game)
             if (GetAsyncKeyState(VK_ESCAPE) & 0x8000)
             {
                 PostMessage(game->window->hwnd, WM_CLOSE, 0, 0);
+            }
+            if(game->isMuted)
+            {
+                muteGame(&sound);
             }
             // Render
             game->render(game, screen_width, screen_height);
@@ -256,6 +261,7 @@ Game* InitializeGame()
 
     game->isRunning = TRUE;
     game->state = MENU;
+    game->isMuted = FALSE;
     game->createWindow = CreateGameWindow;
     game->destroy = GameDestroy;
     game->update = GameLoop;

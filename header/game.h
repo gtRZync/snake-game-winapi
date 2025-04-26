@@ -5,6 +5,7 @@
 #include "window.h"
 #include "menu.h"
 #include "render.h"
+#include "audio.h"
 
 
 typedef interface Game
@@ -26,6 +27,7 @@ typedef interface Game
     void (*render)(interface Game* game, int32_t cx, int32_t cy);
 
     boolean isRunning;
+    boolean isMuted;
     float deltatime;
 }Game;
 

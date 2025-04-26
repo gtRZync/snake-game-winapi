@@ -1,9 +1,9 @@
 #include "sprite.h"
 
-void SetupSprite(SPRITE* sprite, LPCSTR filepath, uint8_t rows, uint8_t cols)
+void SetupSprite(SPRITE* sprite, LPCSTR filepath, uint8_t totalRows, uint8_t totalCols)
 {
-    sprite->totalRows = rows;
-    sprite->totalCols = cols;
+    sprite->totalRows = totalRows;
+    sprite->totalCols = totalCols;
     sprite->sheet = LoadImageA(NULL, filepath, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     if(!sprite->sheet)
     {

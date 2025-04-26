@@ -2,7 +2,7 @@
 #define SNAKE_GAME_H
 #pragma once
 
-#include "config.h"
+#include "utilis.h"
 #include "sprite.h"
 
 typedef interface SnakeNode
