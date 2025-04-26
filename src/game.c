@@ -160,7 +160,6 @@ float interpolateScale(float start, float end, float t) {
 
 void UpdateGame(Game *game)
 {
-    playGameSound(&game->state, &sound, game->isMuted);
     updateSnakePosition(game);
     eatPellet(game);
     animatePellet(game);
@@ -198,12 +197,9 @@ void GameLoop(Game* game)
             {
                 PostMessage(game->window->hwnd, WM_CLOSE, 0, 0);
             }
-            if(game->isMuted)
-            {
-                muteGame(&sound);
-            }
             // Render
             game->render(game, screen_width, screen_height);
+            manageSound(game);
             startGame(game);
             if(game->state == PLAYING)
             {
@@ -363,5 +359,23 @@ void GameDestroy(Game* game)
 void FatalAllocError(LPCWSTR what)
 {
     MessageBoxW(NULL, what, L"malloc failed", MB_OK | MB_ICONERROR);
+}
+
+void manageSound(Game* game)
+{
+    POINT mouse;
+    GetCursorPos(&mouse);
+    if(hasClicked)
+    {
+        if(isPointInRect(&audioRect, mouse.x, mouse.y))
+        {
+            game->isMuted = !game->isMuted;
+            MessageBoxW(NULL, L"Nigga what", L"diih", MB_OK | MB_ICONINFORMATION);
+        }
+        hasClicked = FALSE;
+    }
+    if(game->isMuted)
+        muteGame(&sound);
+    playGameSound(&game->state, &sound, game->isMuted);
 }
 

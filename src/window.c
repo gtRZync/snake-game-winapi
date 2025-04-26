@@ -79,6 +79,7 @@ LRESULT CALLBACK GameWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
             SetupSprite(&title, "resources/assets/sprites/snake_banner.bmp", 1, 1);
             SetupSprite(&keys, "resources/assets/sprites/keys.bmp", 1, 1);
             SetupSprite(&sound, "resources/assets/sprites/sound.bmp", 1, 2);
+            sound.currentFrame = 1;
         }break;
 
         case WM_SETCURSOR:
@@ -92,13 +93,7 @@ LRESULT CALLBACK GameWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 
         case WM_LBUTTONUP:
         {
-            has_clicked = TRUE;
-            POINT mouse;
-            GetCursorPos(&mouse);
-            if(isPointInRect(&audioRect, mouse.x, mouse.y))
-            {
-                game->isMuted = !game->isMuted;
-            }
+            hasClicked = TRUE;
         }break;
 
         case WM_SIZE:

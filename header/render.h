@@ -13,7 +13,7 @@ extern SPRITE sound;
 
 void renderMenu(HWND hwnd, HDC hdc, const GAMESTATE* gameState);
 void renderGrid(HDC hdc);
-void showScore(HDC hdc, SPRITE* sprite);
+void renderHeader(HDC hdc, SPRITE* sprite);
 void drawSnake(HDC hdc, Snake* snake);
 void drawPellet(HDC hdc, Pellet* pellet);
 void displaySnakeList(SnakeNode* head_ptr, HDC hdc);
@@ -23,7 +23,8 @@ void gameOver(HDC hdc, Snake* snake, GAMESTATE* gameState);
 void renderSprite(HDC hdc, SPRITE* sprite, uint32_t cx, uint32_t cy, float scale, UINT transparentColorKey);
 void renderTransparentLayer(HDC hdc, BOOL is_rounded, RECT rect);
 void renderControlKeysOverlay(HDC hdc, SPRITE* sprite, GAMESTATE* gameState);
-int32_t renderTitle(HDC hdc, SPRITE *sprite, uint32_t* Ycoord, float scaleFactor);
-void renderSoundIcon(HDC hdc, SPRITE *sprite, uint32_t iconY, float scaleFactor, RECT* audio);
+int32_t renderTitle(HDC hdc, SPRITE *sprite, float scaleFactor);
+void renderSoundIcon(HDC hdc, SPRITE *sprite, float scaleFactor, RECT* audio);
+void test(HDC);
 
 #endif 
