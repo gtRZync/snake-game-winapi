@@ -25,6 +25,7 @@ typedef interface Game
     void (*resizeDoubleBuffer)(HWND hwnd, DOUBLE_BUFFER *lpDoubleBuffer, int cx, int cy);
     void (*doubleBufferingCleanup)(DOUBLE_BUFFER* lpDoubleBuffer);
     void (*render)(interface Game* game, int32_t cx, int32_t cy);
+    void (*restart)(interface Game* game);
 
     boolean isRunning;
     boolean isMuted;
@@ -55,5 +56,6 @@ void GameLoop(Game* game);
 void GameDestroy(Game* game);
 void prepareGame(Game *game);
 void startGame(Game* game);
+void resetGame(Game* game);
 void manageSound(Game* game);
 #endif

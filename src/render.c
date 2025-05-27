@@ -8,6 +8,7 @@ SPRITE title;
 SPRITE keys;
 SPRITE sound;
 RECT audioRect;
+SPRITE trophee;
 
 static MenuOptions mainMenu[] = {
     {L"Start"},
@@ -104,7 +105,7 @@ void renderToBackBuffer(HWND hwnd, GAMESTATE* gameState, HDC back_buffer, Pellet
         drawPellet(back_buffer, pellet);
         drawSnake(back_buffer, snake);
         renderHeader(back_buffer, &pellet->sprite);
-        gameOver(back_buffer, snake, gameState);
+        renderOnGameOver(back_buffer, snake, pellet,gameState);
         renderControlKeysOverlay(back_buffer, &keys, gameState);
     }
     test(back_buffer);
@@ -187,31 +188,48 @@ void renderHeader(HDC hdc, SPRITE* sprite)
 {
     float scale = 4.1f;
     renderSoundIcon(hdc, &sound, scale, &audioRect);
-    renderSprite(hdc, sprite, (GRID_WIDTH - 4) * TILE_SIZE, 0, scale, turquoise);
+    renderSprite(hdc, sprite, (GRID_WIDTH - 5) * TILE_SIZE, 0, scale, turquoise);
     HFONT hFont = NULL;
     char buffer[16];
     HFONT oldFont = CreateAndSelectFont(hdc, &hFont, font_size + 20, "Wobble Board", white);
     sprintf(buffer, " %d", score);
-    TextOutA(hdc, ((GRID_WIDTH - 2) * TILE_SIZE) , ((sprite->height * scale)/2) - 10, buffer, lstrlen(buffer));
+    TextOutA(hdc, ((GRID_WIDTH - 3) * TILE_SIZE) , ((sprite->height * scale)/2) - 10, buffer, lstrlen(buffer));
     SelectObject(hdc, oldFont);
     DeleteFont(&hFont);
 }
 
-void gameOver(HDC hdc, Snake *snake, GAMESTATE* gameState)
+void renderOnGameOver(HDC hdc, Snake *snake, Pellet* pellet, GAMESTATE* gameState)
 {
+    float scale = 5.8f;
+    char buffer[16];
+    int32_t sprite_x = (trophee.width) * scale; 
+    int32_t sprite2_x = (pellet->sprite.width) * scale; 
+    int32_t textY, textX;
+
     if(!snake->isMoving)
     {
         int32_t center_x, center_y;
         center_x = GRID_WIDTH / 2;
         center_y = ((GRID_HEIGHT) / 2) + 2;
         HFONT hFont = NULL;
-        HFONT oldFont = CreateAndSelectFont(hdc, &hFont, font_size + 6, "Wobble Board", gray);
+
+        HFONT oldFont = CreateAndSelectFont(hdc, &hFont, font_size + 15, "Wobble Board", white);
         RECT rect = SCALE_RECT(center_x, center_y, 8, 4);
         
         if(*gameState == GAMEOVER)
         {
             renderTransparentLayer(hdc, TRUE, rect);
-            TextOutA(hdc, (center_x - 4) * TILE_SIZE, (center_y) * TILE_SIZE , "GameOver Buddy", 15);
+            TextOutA(hdc, (center_x - 7) * TILE_SIZE, (center_y + 2) * TILE_SIZE , "GameOver Buddy", 15);
+            renderSprite(hdc, &trophee, (center_x - 5) * TILE_SIZE, (center_y - 4) * TILE_SIZE, scale, red);
+            renderSprite(hdc, &pellet->sprite, (center_x + 2) * TILE_SIZE, (center_y - 4) * TILE_SIZE, scale, turquoise);
+            sprintf(buffer, "%d", score);
+            int textW = FetchTextX(hdc, buffer);
+            textY = (center_y - 1) * TILE_SIZE;
+            textX = (center_x - 5) * TILE_SIZE + ((sprite_x - textW) / 2); 
+            //TODO : add the high_score , since they are the same right now
+            TextOutA(hdc,textX ,textY, buffer, lstrlen(buffer));//! future high_score
+            textX = (center_x + 2) * TILE_SIZE + ((sprite2_x - textW) / 2); 
+            TextOutA(hdc,textX ,textY, buffer, lstrlen(buffer));
         }
         SelectObject(hdc, oldFont);
         DeleteFont(&hFont);

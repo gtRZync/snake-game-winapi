@@ -3,12 +3,12 @@
 void muteGame(SPRITE *sprite)
 {
     if(sprite)
-        sprite->currentFrame = 0;
-        //sound logic coming soon
-}
-
-void playGameSound(const GAMESTATE *gameState, SPRITE *sprite, boolean isMuted)
-{
-    if(!isMuted)
-        sprite->currentFrame = 1;
-}
+        setSpriteFrame(sprite, 0);
+    }
+    
+    void playGameSound(const GAMESTATE *gameState, SPRITE *sprite, boolean isMuted)
+    {
+        if(!isMuted)
+        setSpriteFrame(sprite, 1);
+        //! sound logic coming soon
+    }

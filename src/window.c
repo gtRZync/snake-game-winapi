@@ -79,6 +79,7 @@ LRESULT CALLBACK GameWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
             SetupSprite(&title, "resources/assets/sprites/snake_banner.bmp", 1, 1);
             SetupSprite(&keys, "resources/assets/sprites/keys.bmp", 1, 1);
             SetupSprite(&sound, "resources/assets/sprites/sound.bmp", 1, 2);
+            SetupSprite(&trophee, "resources/assets/sprites/trophee.bmp", 1, 1);
             sound.currentFrame = 1;
         }break;
 
@@ -115,6 +116,7 @@ LRESULT CALLBACK GameWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
             SpriteCleanup(&title);
             SpriteCleanup(&keys);
             SpriteCleanup(&sound);
+            SpriteCleanup(&trophee);
             SpriteCleanup(&game->pellet->sprite);
             PostQuitMessage(EXIT_SUCCESS);
         }break;

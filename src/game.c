@@ -197,7 +197,7 @@ void GameLoop(Game* game)
             {
                 PostMessage(game->window->hwnd, WM_CLOSE, 0, 0);
             }
-            // Render
+            // Rendering
             game->render(game, screen_width, screen_height);
             manageSound(game);
             startGame(game);
@@ -310,6 +310,7 @@ void prepareGame(Game *game)
 
 void startGame(Game *game)
 {
+    // Transition from MENU to WAIT_MOVE_INPUT if start was clicked
     if(game && game->state == MENU && startClicked)
     {
         prepareGame(game);
@@ -317,6 +318,8 @@ void startGame(Game *game)
         game->state = WAIT_MOVE_INPUT;
         SetupSprite(&game->pellet->sprite, "resources/assets/sprites/apple_1.bmp", 1, 1);
     }
+
+    // Transition to PLAYING if a direction key is pressed
     if(game && game->state == WAIT_MOVE_INPUT)
     {
         if(
@@ -328,6 +331,11 @@ void startGame(Game *game)
                 game->state = PLAYING;
             }
     }
+}
+
+void resetGame(Game *game)
+{
+    
 }
 
 void GameDestroy(Game* game)
