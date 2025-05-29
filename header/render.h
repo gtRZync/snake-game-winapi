@@ -11,6 +11,8 @@ extern SPRITE title;
 extern SPRITE keys;
 extern SPRITE sound;
 extern SPRITE trophee;
+extern SPRITE restart_sprite;
+
 
 void renderMenu(HWND hwnd, HDC hdc, const GAMESTATE* gameState);
 void renderGrid(HDC hdc);
@@ -25,7 +27,7 @@ void renderSprite(HDC hdc, SPRITE* sprite, uint32_t cx, uint32_t cy, float scale
 void renderTransparentLayer(HDC hdc, BOOL is_rounded, RECT rect);
 void renderControlKeysOverlay(HDC hdc, SPRITE* sprite, GAMESTATE* gameState);
 int32_t renderTitle(HDC hdc, SPRITE *sprite, float scaleFactor);
-void renderSoundIcon(HDC hdc, SPRITE *sprite, float scaleFactor, RECT* audio);
-void test(HDC);
+void renderSoundIcon(HDC hdc, SPRITE *sprite, float scaleFactor);
+void test(HDC hdc, const RECT* lprect);
 
 #endif 

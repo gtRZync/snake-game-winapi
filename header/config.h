@@ -34,6 +34,7 @@ extern int32_t screen_height, screen_width;
 extern int32_t score;
 extern boolean hasClicked, startClicked;
 extern RECT audioRect;
+extern RECT restartRect;
 
 //------------------- Defining scales ---------------------------------
 //! maybe in da future

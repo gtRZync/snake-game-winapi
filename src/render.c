@@ -7,8 +7,10 @@ int32_t score = 0;
 SPRITE title;
 SPRITE keys;
 SPRITE sound;
-RECT audioRect;
 SPRITE trophee;
+SPRITE restart_sprite;
+RECT audioRect;
+RECT restartRect;
 
 static MenuOptions mainMenu[] = {
     {L"Start"},
@@ -108,7 +110,8 @@ void renderToBackBuffer(HWND hwnd, GAMESTATE* gameState, HDC back_buffer, Pellet
         renderOnGameOver(back_buffer, snake, pellet,gameState);
         renderControlKeysOverlay(back_buffer, &keys, gameState);
     }
-    test(back_buffer);
+    test(back_buffer, &audioRect);
+    test(back_buffer, &restartRect);
 }
 
 void copyToFrontBuffer(HDC back_buffer, HDC front_buffer, int32_t cx, int32_t cy)
@@ -187,7 +190,7 @@ void renderGrid(HDC hdc)
 void renderHeader(HDC hdc, SPRITE* sprite)
 {
     float scale = 4.1f;
-    renderSoundIcon(hdc, &sound, scale, &audioRect);
+    renderSoundIcon(hdc, &sound, scale);
     renderSprite(hdc, sprite, (GRID_WIDTH - 5) * TILE_SIZE, 0, scale, turquoise);
     HFONT hFont = NULL;
     char buffer[16];
@@ -208,13 +211,15 @@ void renderOnGameOver(HDC hdc, Snake *snake, Pellet* pellet, GAMESTATE* gameStat
 
     if(!snake->isMoving)
     {
+        uint8_t rectScaleX = 8;
+        uint8_t rectScaleY = 4;
         int32_t center_x, center_y;
         center_x = GRID_WIDTH / 2;
         center_y = ((GRID_HEIGHT) / 2) + 2;
         HFONT hFont = NULL;
 
         HFONT oldFont = CreateAndSelectFont(hdc, &hFont, font_size + 15, "Wobble Board", white);
-        RECT rect = SCALE_RECT(center_x, center_y, 8, 4);
+        RECT rect = SCALE_RECT(center_x, center_y, rectScaleX, rectScaleY);
         
         if(*gameState == GAMEOVER)
         {
@@ -222,14 +227,25 @@ void renderOnGameOver(HDC hdc, Snake *snake, Pellet* pellet, GAMESTATE* gameStat
             TextOutA(hdc, (center_x - 7) * TILE_SIZE, (center_y + 2) * TILE_SIZE , "GameOver Buddy", 15);
             renderSprite(hdc, &trophee, (center_x - 5) * TILE_SIZE, (center_y - 4) * TILE_SIZE, scale, red);
             renderSprite(hdc, &pellet->sprite, (center_x + 2) * TILE_SIZE, (center_y - 4) * TILE_SIZE, scale, turquoise);
+            renderSprite(hdc, &restart_sprite, (center_x - 5) * TILE_SIZE, (center_y + rectScaleY) * TILE_SIZE, scale, black);
             sprintf(buffer, "%d", score);
+
             int textW = FetchTextX(hdc, buffer);
             textY = (center_y - 1) * TILE_SIZE;
             textX = (center_x - 5) * TILE_SIZE + ((sprite_x - textW) / 2); 
+
             //TODO : add the high_score , since they are the same right now
             TextOutA(hdc,textX ,textY, buffer, lstrlen(buffer));//! future high_score
             textX = (center_x + 2) * TILE_SIZE + ((sprite2_x - textW) / 2); 
             TextOutA(hdc,textX ,textY, buffer, lstrlen(buffer));
+            
+            restartRect = (RECT)
+            {
+                (center_x - 5) * TILE_SIZE, 
+                (center_y + rectScaleY) * TILE_SIZE, 
+                (center_x - 5) * TILE_SIZE + restart_sprite.width * scale, 
+                (center_y + rectScaleY) * TILE_SIZE + restart_sprite.height * scale
+            };
         }
         SelectObject(hdc, oldFont);
         DeleteFont(&hFont);
@@ -337,23 +353,23 @@ int32_t renderTitle(HDC hdc, SPRITE *sprite, float scaleFactor)
     return -1;
 }
 
-void renderSoundIcon(HDC hdc, SPRITE *sprite, float scaleFactor, RECT* audio)
+void renderSoundIcon(HDC hdc, SPRITE *sprite, float scaleFactor)
 {
     if(sprite)
     {
         uint32_t iconX = 10;
         uint32_t iconY = 0;
-        *audio = (RECT){iconX, iconY, iconX + sprite->width * scaleFactor, iconY + sprite->height * scaleFactor};
+        audioRect = (RECT){iconX, iconY, iconX + sprite->width * scaleFactor, iconY + sprite->height * scaleFactor};
         renderSprite(hdc, sprite, iconX , iconY, scaleFactor, red);
     }
 }
 
-void test(HDC hdc)
+void test(HDC hdc, const RECT* lprect)
 {
     HPEN pen = CreatePen(PS_SOLID, 4, red);
     SelectObject(hdc, GetStockObject(NULL_BRUSH));
     HPEN oldPen = SelectObject(hdc, pen);
-    Rectangle(hdc, audioRect.left, audioRect.top, audioRect.right, audioRect.bottom);
+    Rectangle(hdc, lprect->left, lprect->top, lprect->right, lprect->bottom);
     SelectObject(hdc, oldPen);
     DeleteObject(pen);
 }

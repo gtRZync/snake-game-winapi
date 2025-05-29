@@ -80,6 +80,7 @@ LRESULT CALLBACK GameWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
             SetupSprite(&keys, "resources/assets/sprites/keys.bmp", 1, 1);
             SetupSprite(&sound, "resources/assets/sprites/sound.bmp", 1, 2);
             SetupSprite(&trophee, "resources/assets/sprites/trophee.bmp", 1, 1);
+            SetupSprite(&restart_sprite, "resources/assets/sprites/restart_button.bmp", 1, 1);
             sound.currentFrame = 1;
         }break;
 
@@ -117,6 +118,7 @@ LRESULT CALLBACK GameWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
             SpriteCleanup(&keys);
             SpriteCleanup(&sound);
             SpriteCleanup(&trophee);
+            SpriteCleanup(&restart_sprite);
             SpriteCleanup(&game->pellet->sprite);
             PostQuitMessage(EXIT_SUCCESS);
         }break;
