@@ -31,10 +31,11 @@ typedef enum tagGameStates
 
 extern int32_t timer_intervalUID; 
 extern int32_t screen_height, screen_width;
-extern int32_t score;
-extern boolean hasClicked, startClicked;
+extern int32_t score, high_score;
+extern boolean hasClicked, startClicked, restartClicked;
 extern RECT audioRect;
 extern RECT restartRect;
+extern boolean debugMode;
 
 //------------------- Defining scales ---------------------------------
 //! maybe in da future

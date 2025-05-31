@@ -26,6 +26,7 @@ Right now, it’s all about the basics — more sprite support yet to come.
 - Snake body handled with a linked list
 - Collision detection with pellets
 - Node-freeing system with logging (see below)
+- restart Game
 
 ---
 
@@ -57,7 +58,7 @@ log :
 
 ## Limitations (for now)
 
-- No restart option
+- No sound effect
 
 ---
 
@@ -91,14 +92,13 @@ log :
 
 ## Gameplay
 
-![Snake Game](resources/assets/screenshots/gameplay_v3.gif)  
+![Snake Game](resources/assets/screenshots/gameplay_v4.gif)  
 
 ---
 
 ## Coming Soon
 
 - More sprite-based graphics
-- Restart
 - Sound effects?
 
 ---

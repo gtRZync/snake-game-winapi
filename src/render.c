@@ -4,6 +4,7 @@ int32_t timer_intervalUID = 130;
 int32_t screen_height, screen_width;
 MSG msg = { };
 int32_t score = 0;
+int32_t high_score = 0;
 SPRITE title;
 SPRITE keys;
 SPRITE sound;
@@ -94,6 +95,35 @@ void displaySnakeList(SnakeNode* head_ptr, HDC hdc)
     }
 }
 
+void debugStat(HDC hdc, GAMESTATE* gameState)
+{
+    uint8_t scale_x = 3, scale_y = 8;
+    int32_t x, center_y;
+    x = 3;
+    center_y = ((GRID_HEIGHT) / 2) + 2; //? adding two to center it according to the grid
+    HFONT hFont = NULL;
+    char buffer[64];
+    const char* state = (*gameState == MENU) ? "MENU" :
+                            (*gameState == WAIT_MOVE_INPUT) ? "WAIT_MOVE_INPUT" :
+                            (*gameState == PLAYING) ? "PLAYING" :
+                            (*gameState == PAUSED) ? "PAUSED" : "GAMEOVER";
+
+    RECT rect = SCALE_RECT(x, center_y, scale_x, scale_y);
+    HFONT oldFont = CreateAndSelectFont(hdc, &hFont, -12, "JetBrains Mono", white);
+    renderTransparentLayer(hdc, TRUE, &rect);
+
+    sprintf(buffer, "GameState = %s", state);
+    TextOut(hdc, ((x - scale_x) + 2)* TILE_SIZE, (center_y - scale_y) * TILE_SIZE, "Debug : ", 9);
+    TextOut(hdc, (x - scale_x) * TILE_SIZE, ((center_y - scale_y) + 1) * TILE_SIZE, buffer, lstrlen(buffer));
+    sprintf(buffer, "hasClicked = %s", hasClicked ? "TRUE":"FALSE");
+    TextOut(hdc, (x - scale_x) * TILE_SIZE, ((center_y - scale_y) + 2) * TILE_SIZE, buffer, lstrlen(buffer));
+    sprintf(buffer, "restartClicked = %s", restartClicked ? "TRUE":"FALSE");
+    TextOut(hdc, (x - scale_x) * TILE_SIZE, ((center_y - scale_y) + 3) * TILE_SIZE, buffer, lstrlen(buffer));
+
+    SelectObject(hdc, oldFont);
+    DeleteFont(&hFont);
+}
+
 void renderToBackBuffer(HWND hwnd, GAMESTATE* gameState, HDC back_buffer, Pellet* pellet, Snake* snake)
 {
     RECT screen = {0, 0, screen_width, screen_height};
@@ -110,8 +140,7 @@ void renderToBackBuffer(HWND hwnd, GAMESTATE* gameState, HDC back_buffer, Pellet
         renderOnGameOver(back_buffer, snake, pellet,gameState);
         renderControlKeysOverlay(back_buffer, &keys, gameState);
     }
-    test(back_buffer, &audioRect);
-    test(back_buffer, &restartRect);
+    if(debugMode) debugStat(back_buffer, gameState);
 }
 
 void copyToFrontBuffer(HDC back_buffer, HDC front_buffer, int32_t cx, int32_t cy)
@@ -223,19 +252,23 @@ void renderOnGameOver(HDC hdc, Snake *snake, Pellet* pellet, GAMESTATE* gameStat
         
         if(*gameState == GAMEOVER)
         {
-            renderTransparentLayer(hdc, TRUE, rect);
+            renderTransparentLayer(hdc, TRUE, &rect);
             TextOutA(hdc, (center_x - 7) * TILE_SIZE, (center_y + 2) * TILE_SIZE , "GameOver Buddy", 15);
             renderSprite(hdc, &trophee, (center_x - 5) * TILE_SIZE, (center_y - 4) * TILE_SIZE, scale, red);
             renderSprite(hdc, &pellet->sprite, (center_x + 2) * TILE_SIZE, (center_y - 4) * TILE_SIZE, scale, turquoise);
             renderSprite(hdc, &restart_sprite, (center_x - 5) * TILE_SIZE, (center_y + rectScaleY) * TILE_SIZE, scale, black);
-            sprintf(buffer, "%d", score);
-
+            sprintf(buffer, "%d", high_score);
+            
             int textW = FetchTextX(hdc, buffer);
             textY = (center_y - 1) * TILE_SIZE;
             textX = (center_x - 5) * TILE_SIZE + ((sprite_x - textW) / 2); 
 
-            //TODO : add the high_score , since they are the same right now
-            TextOutA(hdc,textX ,textY, buffer, lstrlen(buffer));//! future high_score
+            //TODO : add json or file read high_score
+            //!HIGH_SCORE
+            TextOutA(hdc,textX ,textY, buffer, lstrlen(buffer));
+            //!SCORE
+            sprintf(buffer, "%d", score);
+            textW = FetchTextX(hdc, buffer);
             textX = (center_x + 2) * TILE_SIZE + ((sprite2_x - textW) / 2); 
             TextOutA(hdc,textX ,textY, buffer, lstrlen(buffer));
             
@@ -285,12 +318,12 @@ void renderSprite(HDC hdc, SPRITE* sprite, uint32_t cx, uint32_t cy, float scale
     DeleteDC(sprite->memDC);
 }
 
-void renderTransparentLayer(HDC hdc, BOOL is_rounded, RECT rect)
+void renderTransparentLayer(HDC hdc, BOOL is_rounded, RECT* rect)
 {
-    int32_t width = (rect.right - rect.left);
-    int32_t height = (rect.bottom - rect.top);
-    uint8_t cx = rect.left;
-    uint8_t cy = rect.top;
+    int32_t width = (rect->right - rect->left);
+    int32_t height = (rect->bottom - rect->top);
+    uint8_t cx = rect->left;
+    uint8_t cy = rect->top;
     HRGN roundRct;
 
     HDC memDC = CreateCompatibleDC(hdc);
@@ -299,12 +332,12 @@ void renderTransparentLayer(HDC hdc, BOOL is_rounded, RECT rect)
     HGDIOBJ oldBrush =(HBRUSH)SelectObject(memDC, overlayBrush);
     HGDIOBJ oldBitmap = (HBITMAP)SelectObject(memDC, hBitmap);
     
-    FillRect(memDC, &rect, overlayBrush);
+    FillRect(memDC, rect, overlayBrush);
     SelectObject(memDC, oldBrush);
     DeleteObject(overlayBrush);
     if(is_rounded)
     {
-        roundRct = CreateRoundRectRgn(rect.left, rect.top, rect.right - 2, rect.bottom - 2, 30, 30);
+        roundRct = CreateRoundRectRgn(rect->left, rect->top, rect->right - 2, rect->bottom - 2, 30, 30);
         SelectClipRgn(hdc, roundRct);
         DeleteObject(roundRct);
     }
@@ -333,7 +366,7 @@ void renderControlKeysOverlay(HDC hdc, SPRITE* sprite, GAMESTATE* gameState)
         int32_t cx = (screen_width - (sprite->width)) / 2;
         int32_t cy = (screen_height - sprite->height) / 2;
 
-        renderTransparentLayer(hdc, TRUE, rect);
+        renderTransparentLayer(hdc, TRUE, &rect);
         renderSprite(hdc, sprite, cx, cy + 50, 1.f, black);
     }
 }

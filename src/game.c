@@ -1,5 +1,7 @@
 #include "game.h"
 
+boolean debugMode = FALSE;
+
 void moveSnake(Snake* snake, int nextX, int nextY)
 {
     addHead(&snake->head, nextX, nextY); 
@@ -87,6 +89,7 @@ void eatPellet(Game* game)
         setPelletCoord(game->pellet);
         score+=1;
         game->snake->shouldGrow = TRUE;
+        if(score > high_score) high_score = score;
     }
 }
 
@@ -197,10 +200,12 @@ void GameLoop(Game* game)
             {
                 PostMessage(game->window->hwnd, WM_CLOSE, 0, 0);
             }
+            if(GetAsyncKeyState(VK_F3) & 0x8000) debugMode = !debugMode;
             // Rendering
             game->render(game, screen_width, screen_height);
             manageSound(game);
             startGame(game);
+            resetGame(game);
             if(game->state == PLAYING)
             {
                 // Input
@@ -311,10 +316,11 @@ void prepareGame(Game *game)
 void startGame(Game *game)
 {
     // Transition from MENU to WAIT_MOVE_INPUT if start was clicked
-    if(game && game->state == MENU && startClicked)
+    if(game && (game->state == MENU && startClicked) || (game->state == GAMEOVER && restartClicked))
     {
         prepareGame(game);
-        startClicked = FALSE;
+        if(startClicked) startClicked = FALSE;
+        if(restartClicked) restartClicked = FALSE;
         game->state = WAIT_MOVE_INPUT;
         SetupSprite(&game->pellet->sprite, "resources/assets/sprites/apple_1.bmp", 1, 1);
     }
@@ -335,7 +341,22 @@ void startGame(Game *game)
 
 void resetGame(Game *game)
 {
-    
+    if(game->state == GAMEOVER)
+    {
+        POINT mouse;
+        GetCursorPos(&mouse);
+        ScreenToClient(game->window->hwnd, &mouse);
+        if(hasClicked)
+        {
+            if(isPointInRect(&restartRect, mouse.x, mouse.y))
+            {
+                restartClicked = TRUE;
+                if(score > high_score) high_score = score;
+                score = 0;
+                hasClicked = FALSE;
+            }
+        }
+    }
 }
 
 void GameDestroy(Game* game)
@@ -373,14 +394,14 @@ void manageSound(Game* game)
 {
     POINT mouse;
     GetCursorPos(&mouse);
+    ScreenToClient(game->window->hwnd, &mouse);
     if(hasClicked)
     {
         if(isPointInRect(&audioRect, mouse.x, mouse.y))
         {
             game->isMuted = !game->isMuted;
-            MessageBoxW(NULL, L"Nigga what", L"diih", MB_OK | MB_ICONINFORMATION);
+            hasClicked = FALSE;
         }
-        hasClicked = FALSE;
     }
     if(game->isMuted)
         muteGame(&sound);

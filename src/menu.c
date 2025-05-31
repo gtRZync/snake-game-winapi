@@ -1,6 +1,6 @@
 #include "menu.h"
 
-boolean hasClicked = FALSE, startClicked = FALSE;
+boolean hasClicked = FALSE, startClicked = FALSE, restartClicked = FALSE;
 
 void addGlowing(HDC hdc, const MenuStyle* style, COLORREF font_color, LPCWSTR text, int32_t y, int32_t x_offset, int32_t y_offset)
 {
