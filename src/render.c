@@ -107,6 +107,7 @@ void debugStat(HDC hdc, GAMESTATE* gameState)
                             (*gameState == WAIT_MOVE_INPUT) ? "WAIT_MOVE_INPUT" :
                             (*gameState == PLAYING) ? "PLAYING" :
                             (*gameState == PAUSED) ? "PAUSED" : "GAMEOVER";
+                            
 
     RECT rect = SCALE_RECT(x, center_y, scale_x, scale_y);
     HFONT oldFont = CreateAndSelectFont(hdc, &hFont, -12, "JetBrains Mono", white);
