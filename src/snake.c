@@ -27,6 +27,9 @@ Snake* createSnake()
     snake->shouldGrow = FALSE;
     snake->isMoving = TRUE;
     snake->isDead = FALSE;
+    snake->scale = 2.94f;
+    snake->sprite = (SPRITE){ };
+    snake->head_sprite = (SPRITE){ };
     return snake;
 }
 
@@ -130,4 +133,4 @@ void removeTail(SnakeNode** head_ptr_ptr)
     SAFE_FREE(current->next);
 }
 
-
+

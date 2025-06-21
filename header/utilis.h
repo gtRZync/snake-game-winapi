@@ -28,7 +28,7 @@
 #define gold             RGB(255, 215, 0)
 #define copperRed        RGB(183, 80, 48)
 #define golden_brown     RGB(194,144,48);
-#define SNAKE_HEAD_COLOR RGB(85, 107, 47)    // Olive
+#define head_sprite_COLOR RGB(85, 107, 47)    // Olive
 #define SNAKE_BODY_COLOR RGB(139, 69, 19)    // SaddleBrown
 #define champagneSilver  RGB(230, 232, 234)
 #define MENU_BG          RGB(36,94,99)

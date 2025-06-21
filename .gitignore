@@ -3,4 +3,5 @@
 free_logs/*.txt
 bin/*.exe
 features/
+bugs/
 

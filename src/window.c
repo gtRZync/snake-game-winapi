@@ -120,6 +120,7 @@ LRESULT CALLBACK GameWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
             SpriteCleanup(&trophee);
             SpriteCleanup(&restart_sprite);
             SpriteCleanup(&game->pellet->sprite);
+            SpriteCleanup(&game->snake->head_sprite);
             PostQuitMessage(EXIT_SUCCESS);
         }break;
     }

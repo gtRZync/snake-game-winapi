@@ -323,6 +323,7 @@ void startGame(Game *game)
         if(restartClicked) restartClicked = FALSE;
         game->state = WAIT_MOVE_INPUT;
         SetupSprite(&game->pellet->sprite, "resources/assets/sprites/apple_1.bmp", 1, 1);
+        SetupSprite(&game->snake->head_sprite, "resources/assets/sprites/snake_head_spritesheet.bmp", 1, 4);
     }
 
     // Transition to PLAYING if a direction key is pressed

@@ -24,6 +24,8 @@ typedef interface tagSnake
     boolean isMoving;
     boolean isDead;//! useless rn , maybe for animation in the future
     SPRITE sprite;
+    SPRITE head_sprite;
+    uint8_t scale;
 } Snake;
 
 SnakeNode* createNode(int cx, int cy);

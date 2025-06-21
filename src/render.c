@@ -34,7 +34,7 @@ static MenuStyle style =
 
 void drawSnake(HDC hdc, Snake* snake)
 {
-    HBRUSH headBrush = CreateSolidBrush(SNAKE_HEAD_COLOR);
+    HBRUSH headBrush = CreateSolidBrush(head_sprite_COLOR);
     HBRUSH bodyBrush = CreateSolidBrush(SNAKE_BODY_COLOR);
     HBRUSH oldBrush = SelectObject(hdc, GetStockObject(NULL_BRUSH));
 
@@ -44,8 +44,15 @@ void drawSnake(HDC hdc, Snake* snake)
 
     HGDIOBJ oldHeadBrush = SelectObject(hdc, headBrush);
     snake->headRect = SETUP_RECT(snake->head->x,snake->head->y, 1);
-    Ellipse(hdc, snake->headRect.left, snake->headRect.top, snake->headRect.right, snake->headRect.bottom);
-    
+    // Ellipse(hdc, snake->headRect.left, snake->headRect.top, snake->headRect.right, snake->headRect.bottom);
+    int offsetX = -4;  
+    int offsetY = -18;
+
+    renderSprite(hdc, &snake->head_sprite, 
+        snake->head->x * TILE_SIZE + offsetX, 
+        snake->head->y * TILE_SIZE + offsetY, 
+        snake->scale, turquoise);
+
     SelectObject(hdc , bodyBrush);
     for(SnakeNode* i = snake->head->next ; i != NULL; i = i->next)
     {
@@ -257,7 +264,7 @@ void renderOnGameOver(HDC hdc, Snake *snake, Pellet* pellet, GAMESTATE* gameStat
             TextOutA(hdc, (center_x - 7) * TILE_SIZE, (center_y + 2) * TILE_SIZE , "GameOver Buddy", 15);
             renderSprite(hdc, &trophee, (center_x - 5) * TILE_SIZE, (center_y - 4) * TILE_SIZE, scale, red);
             renderSprite(hdc, &pellet->sprite, (center_x + 2) * TILE_SIZE, (center_y - 4) * TILE_SIZE, scale, turquoise);
-            renderSprite(hdc, &restart_sprite, (center_x - 5) * TILE_SIZE, (center_y + rectScaleY) * TILE_SIZE, scale, black);
+            renderSprite(hdc, &restart_sprite, (center_x - 5) * TILE_SIZE, (center_y + (rectScaleY - 1) )* TILE_SIZE, scale - 1, turquoise);
             sprintf(buffer, "%d", high_score);
             
             int textW = FetchTextX(hdc, buffer);
@@ -294,8 +301,14 @@ void renderSprite(HDC hdc, SPRITE* sprite, uint32_t cx, uint32_t cy, float scale
     uint32_t frame_x = sprite->currentFrame * sprite->width;
     uint32_t frame_y = sprite->currentRow * sprite->height;
 
+    if(scale <= 0.f)
+        scale = 1.0f;
+
+    int destWidth = (int)(sprite->width * scale);
+    int destHeight = (int)(sprite->height * scale);
+
     RECT src = {frame_x , frame_y, frame_x + sprite->width, frame_y + sprite->height};
-    RECT dst = {cx, cy, cx + sprite->width * scale, cy + sprite->height * scale};
+    RECT dst = {cx, cy, cx + destWidth, cy + destHeight};
 
     uint32_t wSrc = src.right - src.left;
     uint32_t hSrc =  src.bottom - src.top;
