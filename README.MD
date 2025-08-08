@@ -1,6 +1,6 @@
 # Snake Game in C (Windows API)
 
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-brightgreen.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 ![Made with C](https://img.shields.io/badge/Made%20with-C-00599C.svg)
 ![WinAPI](https://img.shields.io/badge/WinAPI-Native-blue.svg)
 ![Windows Only](https://img.shields.io/badge/Windows-Only-red.svg?logo=windows&logoColor=white)
