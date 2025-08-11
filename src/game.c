@@ -231,7 +231,7 @@ void GameLoop(Game* game)
             game->render(game, screen_width, screen_height);
             manageSound(game);
             startGame(game);
-            resetGame(game);
+            handleReset(game);
 
             if (game->state == PLAYING)
             {
@@ -365,7 +365,7 @@ void startGame(Game *game)
     }
 }
 
-void resetGame(Game *game)
+void handleReset(Game *game)
 {
     if(game->state == GAMEOVER)
     {

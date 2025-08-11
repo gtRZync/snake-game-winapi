@@ -53,5 +53,5 @@ void GameLoop(Game* game);
 void GameDestroy(Game* game);
 void prepareGame(Game *game);
 void startGame(Game* game);
-void resetGame(Game* game);
+void handleReset(Game* game);
 void manageSound(Game* game);
