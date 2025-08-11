@@ -1,7 +1,8 @@
-.vscode/*
+.vscode/
 !.vscode/tasks.json
 free_logs/*.txt
 bin/*.exe
+obj/*
 features/
 bugs/
 

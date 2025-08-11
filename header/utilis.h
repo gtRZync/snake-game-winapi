@@ -1,5 +1,3 @@
-#ifndef UTILIS_H
-#define UTILIS_H
 #pragma once
 
 #include "config.h"
@@ -36,5 +34,6 @@
 
 
 boolean isPointInRect(const RECT* rect, int32_t clickedX, int32_t clickedY);
+uint8_t directionToIndex(DIRECTIONS dir);
+const char* directionToString(DIRECTIONS dir);
 
-#endif //UTILIS_H

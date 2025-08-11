@@ -1,9 +1,8 @@
-#ifndef CONFIG_H
-#define CONFIG_H
 #pragma once
 #define TILE_SIZE 32
 #define GRID_WIDTH  26
 #define GRID_HEIGHT 19 
+#define DEBUG
 
 #include <windows.h>
 #include <stdio.h>
@@ -11,14 +10,27 @@
 #include <stdint.h>
 #include <time.h>
 #include <math.h>
+#include <stdbool.h>
+#include "sprite.h"
 
+#define NUM_DIRECTIONS 4
+#define HEAD 0
 typedef enum tagDirections
 {
     UP,
-    LEFT,
     RIGHT,
+    LEFT,
     DOWN,
 } DIRECTIONS;
+
+typedef enum tagSegmentTypes
+{
+    SEGMENT_STRAIGHT,    
+    SEGMENT_CURVE_UP,   
+    SEGMENT_CURVE_DOWN,   
+    SEGMENT_TAIL,        
+    SEGMENT_CURVE_TAIL         
+} SEGMENT_TYPE;
 
 typedef enum tagGameStates
 {
@@ -29,13 +41,16 @@ typedef enum tagGameStates
     GAMEOVER
 }GAMESTATE;
 
-extern int32_t timer_intervalUID; 
+typedef enum INDEXES {RESTART, SOUND, NUM_INDEXES}INDEXES;
+
+extern Frame frames[NUM_INDEXES];
 extern int32_t screen_height, screen_width;
 extern int32_t score, high_score;
+extern int32_t _exitCode;
 extern boolean hasClicked, startClicked, restartClicked;
 extern RECT audioRect;
 extern RECT restartRect;
-extern boolean debugMode;
+extern bool debugMode;
 
 //------------------- Defining scales ---------------------------------
 //! maybe in da future
@@ -43,5 +58,3 @@ extern boolean debugMode;
 #define DPI_SCALE_125 120
 #define DPI_SCALE_150 144
 #define DPI_SCALE_200 192
-
-#endif
