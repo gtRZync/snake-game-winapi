@@ -444,20 +444,20 @@ Frame getCornerFrame(DIRECTIONS fromDir, DIRECTIONS toDir)
 {
     // Handle different corner combinations
     if ((fromDir == UP && toDir == RIGHT) )
-        return (Frame){.row=SEGMENT_CURVE_UP, .col=2};
+        return (Frame){.row=SEGMENT_CURVE_UP, .col=CURVE_UP_TO_RIGHT_COL};
     else if(fromDir == LEFT && toDir == DOWN)
-        return (Frame){.row=SEGMENT_CURVE_DOWN, .col=2};
+        return (Frame){.row=SEGMENT_CURVE_DOWN, .col=CURVE_LEFT_TO_DOWN_COL};
     else if ((fromDir == UP && toDir == LEFT) )
-        return (Frame){.row=SEGMENT_CURVE_UP, .col=3};
+        return (Frame){.row=SEGMENT_CURVE_UP, .col=CURVE_UP_TO_LEFT_COL};
     else if (fromDir == RIGHT && toDir == DOWN)
-        return (Frame){.row=SEGMENT_CURVE_DOWN, .col=3};  
+        return (Frame){.row=SEGMENT_CURVE_DOWN, .col=CURVE_RIGHT_TO_DOWN_COL};  
     else if ((fromDir == DOWN && toDir == RIGHT))
-        return (Frame){.row=SEGMENT_CURVE_DOWN, .col=0};
+        return (Frame){.row=SEGMENT_CURVE_DOWN, .col=CURVE_DOWN_TO_RIGHT_COL};
     else if (fromDir == LEFT && toDir == UP)
-        return (Frame){.row=SEGMENT_CURVE_UP, .col=0};
+        return (Frame){.row=SEGMENT_CURVE_UP, .col=CURVE_LEFT_TO_UP_COL};
     else if ((fromDir == DOWN && toDir == LEFT))
-        return (Frame){.row=SEGMENT_CURVE_DOWN, .col=1};
+        return (Frame){.row=SEGMENT_CURVE_DOWN, .col=CURVE_DOWN_TO_LEFT_COL};
     else if (fromDir == RIGHT && toDir == UP)
-        return (Frame){.row=SEGMENT_CURVE_UP, .col=1};
+        return (Frame){.row=SEGMENT_CURVE_UP, .col=CURVE_RIGHT_TO_UP_COL};
     return (Frame){}; // Default
 }

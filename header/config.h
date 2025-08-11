@@ -4,6 +4,19 @@
 #define GRID_HEIGHT 19 
 #define DEBUG
 
+// For SEGMENT_CURVE_UP row
+#define CURVE_UP_TO_RIGHT_COL 2
+#define CURVE_UP_TO_LEFT_COL 3
+#define CURVE_LEFT_TO_UP_COL 0
+#define CURVE_RIGHT_TO_UP_COL 1
+
+// For SEGMENT_CURVE_DOWN row
+#define CURVE_DOWN_TO_LEFT_COL 1
+#define CURVE_DOWN_TO_RIGHT_COL 0
+#define CURVE_LEFT_TO_DOWN_COL 2
+#define CURVE_RIGHT_TO_DOWN_COL 3
+
+
 #include <windows.h>
 #include <stdio.h>
 #include <stdlib.h>
