@@ -81,7 +81,6 @@ LRESULT CALLBACK GameWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
             SetupSprite(&sound, "resources/assets/sprites/sound.bmp", 1, 2);
             SetupSprite(&trophee, "resources/assets/sprites/trophee.bmp", 1, 1);
             SetupSprite(&restart_sprite, "resources/assets/sprites/restart_button.bmp", 1, 1);
-            sound.currentFrame = 1;
         }break;
 
         case WM_SETCURSOR:
@@ -95,7 +94,7 @@ LRESULT CALLBACK GameWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 
         case WM_LBUTTONUP:
         {
-            hasClicked = TRUE;
+            hasClicked = true;
         }break;
 
         case WM_SIZE:
@@ -119,8 +118,15 @@ LRESULT CALLBACK GameWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
             SpriteCleanup(&sound);
             SpriteCleanup(&trophee);
             SpriteCleanup(&restart_sprite);
-            SpriteCleanup(&game->pellet->sprite);
-            SpriteCleanup(&game->snake->head_sprite);
+            if(game) 
+            {
+                if(game->pellet) 
+                    SpriteCleanup(&game->pellet->sprite);
+                if(game->snake)
+                    SpriteCleanup(&game->snake->headSprite);
+                if(game->buffer)
+                    game->doubleBufferingCleanup(game->buffer);
+            }
             PostQuitMessage(EXIT_SUCCESS);
         }break;
     }

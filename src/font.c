@@ -9,9 +9,9 @@ HFONT CreateAndSelectFont(HDC hdc, HFONT *hFont, UINT font_size, LPCSTR font_nam
         0,
         0,
         FW_NORMAL,
-        FALSE,
-        FALSE,
-        FALSE,
+        false,
+        false,
+        false,
         DEFAULT_CHARSET,
         OUT_DEFAULT_PRECIS,
         CLIP_DEFAULT_PRECIS,
@@ -40,9 +40,9 @@ WINBOOL DeleteFont(HFONT *hFont)
     {
         DeleteObject(*hFont);
         *hFont = NULL;
-        return TRUE;
+        return true;
     }
-    return FALSE;
+    return false;
 }
 
 void FetchTextCenteredMetrics(HDC hdc, int* cx, int* cy, LPCWSTR lpString)

@@ -1,14 +1,14 @@
 #include "audio.h"
 
-void muteGame(SPRITE *sprite)
+void muteGame(const SPRITE *sprite)
 {
     if(sprite)
-        setSpriteFrame(sprite, 0);
-    }
-    
-    void playGameSound(const GAMESTATE *gameState, SPRITE *sprite, boolean isMuted)
-    {
-        if(!isMuted)
-        setSpriteFrame(sprite, 1);
-        //! sound logic coming soon
-    }
+        setFrameCol(sprite, &frames[SOUND], 0);
+}
+
+void playGameSound(const GAMESTATE *gameState, const SPRITE *sprite, boolean isMuted)
+{
+    if(!isMuted)
+        setFrameCol(sprite, &frames[SOUND], 1);
+    //! sound logic coming soon
+}

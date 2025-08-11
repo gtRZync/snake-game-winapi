@@ -1,10 +1,6 @@
-#ifndef AUDIO_H
-#define AUDIO_H
-#include "sprite.h"
+#pragma once
 #include "utilis.h"
 
-void muteGame(SPRITE* sprite);
-void playGameSound(const GAMESTATE* gameState, SPRITE* sprite, boolean isMuted);
+void muteGame(const SPRITE* sprite);
+void playGameSound(const GAMESTATE* gameState, const SPRITE* sprite, boolean isMuted);
 
-
-#endif

@@ -1,5 +1,3 @@
-#ifndef FONT_H
-#define FONT_H
 #pragma once
 #include "utilis.h"
 
@@ -13,5 +11,3 @@ int FetchTextX(HDC hdc, LPCTSTR lpString);
 int FetchTextXW(HDC hdc, LPCWSTR lpString);
 void FetchTextCenteredMetrics(HDC hdc, int* cx, int* cy, LPCWSTR lpString);
 void FetchTextCenteredMetricsA(HDC hdc, int* cx, int* cy, LPCTSTR lpString);
-
-#endif

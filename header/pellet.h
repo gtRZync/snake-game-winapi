@@ -1,9 +1,6 @@
-#ifndef PELLET_H
-#define PELLET_H
 #pragma once
 
 #include "utilis.h"
-#include "sprite.h"
 
 typedef interface tagPellet
 {
@@ -17,5 +14,3 @@ typedef interface tagPellet
 Pellet* initPellet();
 void setPelletCoord(Pellet* pellet);
 int get_rand_min_max(int min, int max);
-
-#endif

@@ -1,6 +1,5 @@
 #include "render.h"
 
-int32_t timer_intervalUID = 130;
 int32_t screen_height, screen_width;
 MSG msg = { };
 int32_t score = 0;
@@ -32,40 +31,74 @@ static MenuStyle style =
     .hFont = NULL
 };
 
+Frame frames[NUM_INDEXES] = {
+    {.row=0, .col=0},//RESTART
+    {.row=0, .col=1}//SOUND
+};
+
 void drawSnake(HDC hdc, Snake* snake)
 {
-    HBRUSH headBrush = CreateSolidBrush(head_sprite_COLOR);
-    HBRUSH bodyBrush = CreateSolidBrush(SNAKE_BODY_COLOR);
-    HBRUSH oldBrush = SelectObject(hdc, GetStockObject(NULL_BRUSH));
-
-    COLORREF borderColor =  RGB(17 ,61 ,62); 
-    HPEN pen = CreatePen(PS_SOLID, 2, borderColor);
-    HGDIOBJ oldPen = (HPEN) SelectObject(hdc, pen);
-
-    HGDIOBJ oldHeadBrush = SelectObject(hdc, headBrush);
     snake->headRect = SETUP_RECT(snake->head->x,snake->head->y, 1);
-    // Ellipse(hdc, snake->headRect.left, snake->headRect.top, snake->headRect.right, snake->headRect.bottom);
-    int offsetX = -4;  
-    int offsetY = -18;
+    snake->head->frame =(Frame) {.row=directionToIndex(snake->head->direction),.col=HEAD};
+    renderSprite(
+        hdc, &snake->headSprite, 
+        snake->headRect.left, 
+        snake->headRect.top, 
+        snake->scale, snake->head->frame, turquoise
+    );
 
-    renderSprite(hdc, &snake->head_sprite, 
-        snake->head->x * TILE_SIZE + offsetX, 
-        snake->head->y * TILE_SIZE + offsetY, 
-        snake->scale, turquoise);
-
-    SelectObject(hdc , bodyBrush);
-    for(SnakeNode* i = snake->head->next ; i != NULL; i = i->next)
+    DIRECTIONS prevDir = snake->head->direction; 
+    SnakeNode* current = snake->head->next;
+    while(current)
     {
-        snake->body = SETUP_RECT(i->x, i->y, 1);
-        Ellipse(hdc, snake->body.left, snake->body.top, snake->body.right, snake->body.bottom);
+        snake->body = SETUP_RECT(current->x, current->y, 1);
+        if(current->next != NULL)
+        {
+            if(prevDir != current->direction) {
+                current->frame = getCornerFrame(prevDir, current->direction);
+                renderSprite(
+                    hdc, &snake->sprite, 
+                    snake->body.left, 
+                    snake->body.top, 
+                    snake->scale, current->frame, turquoise
+                );
+            }
+            else 
+            {
+                current->frame = (Frame){.row=SEGMENT_STRAIGHT, .col=directionToIndex(current->direction)};
+                renderSprite(
+                    hdc, &snake->sprite, 
+                    snake->body.left, 
+                    snake->body.top, 
+                    snake->scale, current->frame, turquoise
+                );
+            }
+        }
+        else
+        {
+            if(prevDir != current->direction) {
+                current->frame = (Frame){.row=SEGMENT_CURVE_TAIL, .col=directionToIndex(prevDir)};
+                renderSprite(
+                    hdc, &snake->sprite, 
+                    snake->body.left, 
+                    snake->body.top, 
+                    snake->scale, current->frame, turquoise
+                );
+            }
+            else 
+            {
+                current->frame = (Frame){.row=SEGMENT_TAIL, .col=directionToIndex(current->direction)};
+                renderSprite(
+                    hdc, &snake->sprite, 
+                    snake->body.left, 
+                    snake->body.top, 
+                    snake->scale, current->frame, turquoise
+                );
+            }
+        }
+        prevDir = current->direction;
+        current = current->next;
     }
-
-    SelectObject(hdc, oldPen);
-    SelectObject(hdc, oldBrush);
-
-    DeleteObject(headBrush);
-    DeleteObject(bodyBrush);
-    DeleteObject(pen);
 }
 
 void drawPellet(HDC hdc, Pellet* pellet)
@@ -84,23 +117,9 @@ void drawPellet(HDC hdc, Pellet* pellet)
     int drawX = centerX - scaledW / 2;
     int drawY = centerY - scaledH / 2;
 
-    renderSprite(hdc, &pellet->sprite, drawX, drawY, pellet->scale, turquoise);
+    renderSprite(hdc, &pellet->sprite, drawX, drawY, pellet->scale,(Frame){.row=0, .col=0}, turquoise);
 }
 
-void displaySnakeList(SnakeNode* head_ptr, HDC hdc)
-{
-    char buffer[64];
-    SetTextColor(hdc, RGB(255, 255, 255));
-    SetBkMode(hdc, TRANSPARENT);
-    SnakeNode* current = head_ptr;
-    printf("Debugging snake list:\n");
-    while (current != NULL)
-    {
-        sprintf(buffer, "Node at (%d, %d)\n Next: %#x\n", current->x, current->y,(void*)current->next);
-        current = current->next;
-        TextOutA(hdc, 32, 32, buffer, lstrlenA(buffer));
-    }
-}
 
 void debugStat(HDC hdc, GAMESTATE* gameState)
 {
@@ -118,14 +137,14 @@ void debugStat(HDC hdc, GAMESTATE* gameState)
 
     RECT rect = SCALE_RECT(x, center_y, scale_x, scale_y);
     HFONT oldFont = CreateAndSelectFont(hdc, &hFont, -12, "JetBrains Mono", white);
-    renderTransparentLayer(hdc, TRUE, &rect);
+    renderTransparentLayer(hdc, true, &rect);
 
     sprintf(buffer, "GameState = %s", state);
     TextOut(hdc, ((x - scale_x) + 2)* TILE_SIZE, (center_y - scale_y) * TILE_SIZE, "Debug : ", 9);
     TextOut(hdc, (x - scale_x) * TILE_SIZE, ((center_y - scale_y) + 1) * TILE_SIZE, buffer, lstrlen(buffer));
-    sprintf(buffer, "hasClicked = %s", hasClicked ? "TRUE":"FALSE");
+    sprintf(buffer, "hasClicked = %s", hasClicked ? "true":"false");
     TextOut(hdc, (x - scale_x) * TILE_SIZE, ((center_y - scale_y) + 2) * TILE_SIZE, buffer, lstrlen(buffer));
-    sprintf(buffer, "restartClicked = %s", restartClicked ? "TRUE":"FALSE");
+    sprintf(buffer, "restartClicked = %s", restartClicked ? "true":"false");
     TextOut(hdc, (x - scale_x) * TILE_SIZE, ((center_y - scale_y) + 3) * TILE_SIZE, buffer, lstrlen(buffer));
 
     SelectObject(hdc, oldFont);
@@ -228,7 +247,7 @@ void renderHeader(HDC hdc, SPRITE* sprite)
 {
     float scale = 4.1f;
     renderSoundIcon(hdc, &sound, scale);
-    renderSprite(hdc, sprite, (GRID_WIDTH - 5) * TILE_SIZE, 0, scale, turquoise);
+    renderSprite(hdc, sprite, (GRID_WIDTH - 5) * TILE_SIZE, 0, scale ,(Frame){.row=0, .col=0}, turquoise);
     HFONT hFont = NULL;
     char buffer[16];
     HFONT oldFont = CreateAndSelectFont(hdc, &hFont, font_size + 20, "Wobble Board", white);
@@ -260,11 +279,11 @@ void renderOnGameOver(HDC hdc, Snake *snake, Pellet* pellet, GAMESTATE* gameStat
         
         if(*gameState == GAMEOVER)
         {
-            renderTransparentLayer(hdc, TRUE, &rect);
+            renderTransparentLayer(hdc, true, &rect);
             TextOutA(hdc, (center_x - 7) * TILE_SIZE, (center_y + 2) * TILE_SIZE , "GameOver Buddy", 15);
-            renderSprite(hdc, &trophee, (center_x - 5) * TILE_SIZE, (center_y - 4) * TILE_SIZE, scale, red);
-            renderSprite(hdc, &pellet->sprite, (center_x + 2) * TILE_SIZE, (center_y - 4) * TILE_SIZE, scale, turquoise);
-            renderSprite(hdc, &restart_sprite, (center_x - 5) * TILE_SIZE, (center_y + (rectScaleY - 1) )* TILE_SIZE, scale - 1, turquoise);
+            renderSprite(hdc, &trophee, (center_x - 5) * TILE_SIZE, (center_y - 4) * TILE_SIZE, scale,(Frame){.row=0, .col=0}, red);
+            renderSprite(hdc, &pellet->sprite, (center_x + 2) * TILE_SIZE, (center_y - 4) * TILE_SIZE, scale ,(Frame){.row=0, .col=0}, turquoise);
+            renderSprite(hdc, &restart_sprite, (center_x - 5) * TILE_SIZE, (center_y + (rectScaleY - 1) )* TILE_SIZE, scale - 1 ,frames[RESTART], turquoise);
             sprintf(buffer, "%d", high_score);
             
             int textW = FetchTextX(hdc, buffer);
@@ -293,13 +312,13 @@ void renderOnGameOver(HDC hdc, Snake *snake, Pellet* pellet, GAMESTATE* gameStat
     }
 }
 
-void renderSprite(HDC hdc, SPRITE* sprite, uint32_t cx, uint32_t cy, float scale, UINT transparentColorKey)
+void renderSprite(HDC hdc, SPRITE* sprite, uint32_t cx, uint32_t cy, float scale, const Frame frame, UINT transparentColorKey)
 {
     sprite->memDC = CreateCompatibleDC(hdc);
-    HGDIOBJ oldBitmap =  SelectObject(sprite->memDC, sprite->sheet);
+    SelectObject(sprite->memDC, sprite->sheet);
 
-    uint32_t frame_x = sprite->currentFrame * sprite->width;
-    uint32_t frame_y = sprite->currentRow * sprite->height;
+    uint32_t frame_x = frame.col * sprite->width;
+    uint32_t frame_y = frame.row * sprite->height;
 
     if(scale <= 0.f)
         scale = 1.0f;
@@ -380,8 +399,8 @@ void renderControlKeysOverlay(HDC hdc, SPRITE* sprite, GAMESTATE* gameState)
         int32_t cx = (screen_width - (sprite->width)) / 2;
         int32_t cy = (screen_height - sprite->height) / 2;
 
-        renderTransparentLayer(hdc, TRUE, &rect);
-        renderSprite(hdc, sprite, cx, cy + 50, 1.f, black);
+        renderTransparentLayer(hdc, true, &rect);
+        renderSprite(hdc, sprite, cx, cy + 50, 1.f,(Frame){.row=0, .col=0}, black);
     }
 }
 
@@ -393,7 +412,7 @@ int32_t renderTitle(HDC hdc, SPRITE *sprite, float scaleFactor)
 
         uint32_t titleY = (screen_height - (sprite->height * scaleFactor)) / 20;
 
-        renderSprite(hdc, sprite, titleX , titleY, scaleFactor, black);
+        renderSprite(hdc, sprite, titleX , titleY, scaleFactor,(Frame){.row=0, .col=0}, black);
 
         return titleY + (sprite->height * scaleFactor);
     }
@@ -407,7 +426,7 @@ void renderSoundIcon(HDC hdc, SPRITE *sprite, float scaleFactor)
         uint32_t iconX = 10;
         uint32_t iconY = 0;
         audioRect = (RECT){iconX, iconY, iconX + sprite->width * scaleFactor, iconY + sprite->height * scaleFactor};
-        renderSprite(hdc, sprite, iconX , iconY, scaleFactor, red);
+        renderSprite(hdc, sprite, iconX , iconY, scaleFactor,frames[SOUND], red);
     }
 }
 
@@ -419,4 +438,26 @@ void test(HDC hdc, const RECT* lprect)
     Rectangle(hdc, lprect->left, lprect->top, lprect->right, lprect->bottom);
     SelectObject(hdc, oldPen);
     DeleteObject(pen);
+}
+
+Frame getCornerFrame(DIRECTIONS fromDir, DIRECTIONS toDir)
+{
+    // Handle different corner combinations
+    if ((fromDir == UP && toDir == RIGHT) )
+        return (Frame){.row=SEGMENT_CURVE_UP, .col=2};
+    else if(fromDir == LEFT && toDir == DOWN)
+        return (Frame){.row=SEGMENT_CURVE_DOWN, .col=2};
+    else if ((fromDir == UP && toDir == LEFT) )
+        return (Frame){.row=SEGMENT_CURVE_UP, .col=3};
+    else if (fromDir == RIGHT && toDir == DOWN)
+        return (Frame){.row=SEGMENT_CURVE_DOWN, .col=3};  
+    else if ((fromDir == DOWN && toDir == RIGHT))
+        return (Frame){.row=SEGMENT_CURVE_DOWN, .col=0};
+    else if (fromDir == LEFT && toDir == UP)
+        return (Frame){.row=SEGMENT_CURVE_UP, .col=0};
+    else if ((fromDir == DOWN && toDir == LEFT))
+        return (Frame){.row=SEGMENT_CURVE_DOWN, .col=1};
+    else if (fromDir == RIGHT && toDir == UP)
+        return (Frame){.row=SEGMENT_CURVE_UP, .col=1};
+    return (Frame){}; // Default
 }

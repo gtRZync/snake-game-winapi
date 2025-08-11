@@ -1,5 +1,3 @@
-#ifndef GAME_H
-#define GAME_H
 #pragma once
 
 #include "window.h"
@@ -16,7 +14,6 @@ typedef interface Game
     Pellet* pellet;
     HINSTANCE hInstance;
     DOUBLE_BUFFER* buffer;
-    DIRECTIONS snake_direction;
 
     void (*createWindow)(interface Game* game, HINSTANCE hInstance, int nShowCmd);
     void (*update)(interface Game* game);
@@ -38,7 +35,7 @@ Game* InitializeGame();
 void FatalAllocError(LPCWSTR what);
 DIRECTIONS getReversedDirection(DIRECTIONS direction);
 float interpolateScale(float start, float end, float t);
-void moveSnake(Snake* snake, int nextX, int nextY);
+void moveSnake(Snake* snake, int nextX, int nextY, DIRECTIONS dir);
 boolean isCollisionSnakeBody(Snake* snake);
 boolean isCollisionSnakePellet(Game* game);
 void checkSelfCollision(Game* game);
@@ -46,7 +43,7 @@ void checkWallCollision(Game* game);
 void checkCollisions(Game* game);
 void eatPellet(Game* game);
 void updateSnakePosition(Game* game);
-void changeDirection(DIRECTIONS* current_direction);
+void changeDirection(DIRECTIONS *currentDirection, SPRITE* sprite);
 void stopAtWall(Game* game);
 void stopAtSelf(Game* game);
 void animatePellet(Game* game);
@@ -58,4 +55,3 @@ void prepareGame(Game *game);
 void startGame(Game* game);
 void resetGame(Game* game);
 void manageSound(Game* game);
-#endif

@@ -1,6 +1,6 @@
 #include "menu.h"
 
-boolean hasClicked = FALSE, startClicked = FALSE, restartClicked = FALSE;
+boolean hasClicked = false, startClicked = false, restartClicked = false;
 
 void addGlowing(HDC hdc, const MenuStyle* style, COLORREF font_color, LPCWSTR text, int32_t y, int32_t x_offset, int32_t y_offset)
 {
@@ -81,7 +81,7 @@ void drawMenu(HWND hwnd, HDC hdc, uint32_t topPart, MenuOptions* options, uint8_
         for (int i = 0; i < n_options; i++) {
             handleClick(hwnd, &rect[i], i, &mouse);
         }
-        hasClicked = FALSE;
+        hasClicked = false;
     }
     SelectObject(hdc, oldBrush);
     DeleteObject(brush);
@@ -106,7 +106,7 @@ void handleClick(HWND hwnd, const RECT *rect, uint8_t id, const POINT* mouse)
         switch(id)
         {
             case 0:
-                startClicked = TRUE;
+                startClicked = true;
                 break;
 
             case 1:

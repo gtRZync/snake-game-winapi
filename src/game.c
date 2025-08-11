@@ -1,10 +1,13 @@
 #include "game.h"
+#include "utilis.h"
 
-boolean debugMode = FALSE;
+bool debugMode = false;
+int32_t _exitCode;
 
-void moveSnake(Snake* snake, int nextX, int nextY)
+
+void moveSnake(Snake* snake, int nextX, int nextY, DIRECTIONS dir)
 {
-    addHead(&snake->head, nextX, nextY); 
+    addHead(&snake->head, nextX, nextY, dir); 
 
     if (snake->isMoving && !snake->shouldGrow)
     {
@@ -14,7 +17,7 @@ void moveSnake(Snake* snake, int nextX, int nextY)
     {
         if (snake->shouldGrow)
         {
-            snake->shouldGrow = FALSE;
+            snake->shouldGrow = false;
         }
     }
 }
@@ -24,7 +27,7 @@ void checkSelfCollision(Game* game)
     if(isCollisionSnakeBody(game->snake))
     {
         stopAtSelf(game);
-        game->snake->isMoving = FALSE;
+        game->snake->isMoving = false;
         if(game->state == PLAYING)
             game->state = GAMEOVER;
     }
@@ -36,7 +39,7 @@ void checkWallCollision(Game* game)
         game->snake->cy > GRID_HEIGHT - 2 || game->snake->cy < 4)
     {
         stopAtWall(game);
-        game->snake->isMoving = FALSE;
+        game->snake->isMoving = false;
         if(game->state == PLAYING)
             game->state = GAMEOVER;
     }
@@ -46,6 +49,19 @@ void checkCollisions(Game* game)
 {
     checkSelfCollision(game);
     checkWallCollision(game);
+#ifdef DEBUG
+    static bool show = true;
+    if(game->state == GAMEOVER) {
+        if(show) {  
+            printSnakeDirections(game->snake->head);
+            show = false;
+        }
+    }
+    else
+    {
+        show = true;
+    }
+#endif
 }
 
 boolean isCollisionSnakeBody(Snake *snake)
@@ -54,10 +70,10 @@ boolean isCollisionSnakeBody(Snake *snake)
         {
             if(i->x == snake->cx && i->y == snake->cy)
             {
-                return TRUE;
+                return true;
             }
         }
-    return FALSE;
+    return false;
 }
 
 boolean isCollisionSnakePellet(Game* game)
@@ -74,6 +90,7 @@ DIRECTIONS getReversedDirection(DIRECTIONS direction)
         case DOWN: return UP;
         case LEFT: return RIGHT;
         case RIGHT: return LEFT;
+        default: return direction;
     }
 }
 
@@ -88,7 +105,7 @@ void eatPellet(Game* game)
     {
         setPelletCoord(game->pellet);
         score+=1;
-        game->snake->shouldGrow = TRUE;
+        game->snake->shouldGrow = true;
         if(score > high_score) high_score = score;
     }
 }
@@ -100,7 +117,7 @@ void updateSnakePosition(Game* game)
     int32_t oldY = game->snake->cy;
     if(game->snake->isMoving)
     {
-        switch(game->snake_direction)
+        switch(game->snake->direction)
         {
             case UP:    game->snake->cy--; break;
             case LEFT:  game->snake->cx--; break;
@@ -112,21 +129,23 @@ void updateSnakePosition(Game* game)
         {
             game->snake->previousX = oldX;
             game->snake->previousY = oldY;
-            moveSnake(game->snake, game->snake->cx, game->snake->cy);
+            moveSnake(game->snake, game->snake->cx, game->snake->cy, game->snake->direction);
         }
     }
 }
 
-void changeDirection(DIRECTIONS *current_direction)
-{
-    DIRECTIONS new_direction = *current_direction;
-    if (GetAsyncKeyState(VK_LEFT) & 0x8000) new_direction = LEFT;
-    else if (GetAsyncKeyState(VK_RIGHT) & 0x8000) new_direction = RIGHT;
-    else if (GetAsyncKeyState(VK_UP) & 0x8000) new_direction = UP;
-    else if (GetAsyncKeyState(VK_DOWN) & 0x8000) new_direction = DOWN;
 
-    if (getReversedDirection(*current_direction) != new_direction) {
-        *current_direction = new_direction;
+void changeDirection(DIRECTIONS *currentDirection, SPRITE* sprite)
+{
+    DIRECTIONS newDirection = *currentDirection;
+    if (GetAsyncKeyState(VK_LEFT) & 0x8000) newDirection = LEFT;
+    else if (GetAsyncKeyState(VK_RIGHT) & 0x8000) newDirection = RIGHT;
+    else if (GetAsyncKeyState(VK_UP) & 0x8000) newDirection = UP;
+    else if (GetAsyncKeyState(VK_DOWN) & 0x8000) newDirection = DOWN;
+
+
+    if (getReversedDirection(*currentDirection) != newDirection) {
+        *currentDirection = newDirection;
     }
 }
 
@@ -183,37 +202,43 @@ void GameLoop(Game* game)
     {
         while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
         {
-            if (msg.message == WM_QUIT || msg.message == WM_CLOSE)
+            if (msg.message == WM_QUIT)
             {
-                game->isRunning = FALSE;
+                game->isRunning = false;
+                _exitCode = (int32_t)msg.wParam;
                 break;
             }
 
             TranslateMessage(&msg);
             DispatchMessage(&msg);
         }
+
         DWORD currentTime = GetTickCount();
         if (currentTime - lastFrameTime >= frameDelay)
         {
             lastFrameTime = currentTime;
+
             if (GetAsyncKeyState(VK_ESCAPE) & 0x8000)
             {
                 PostMessage(game->window->hwnd, WM_CLOSE, 0, 0);
             }
-            if(GetAsyncKeyState(VK_F3) & 0x8000) debugMode = !debugMode;
-            // Rendering
+
+            if (GetAsyncKeyState(VK_F3) & 0x8000)
+            {
+                debugMode = !debugMode;
+            }
+
             game->render(game, screen_width, screen_height);
             manageSound(game);
             startGame(game);
             resetGame(game);
-            if(game->state == PLAYING)
-            {
-                // Input
-                changeDirection(&game->snake_direction);
 
-                // Update logic
+            if (game->state == PLAYING)
+            {
+                changeDirection(&game->snake->direction, &game->snake->headSprite);
                 UpdateGame(game);
             }
+
             Sleep(1);
         }
     }
@@ -221,7 +246,7 @@ void GameLoop(Game* game)
 
 void stopAtWall(Game* game)
 {
-    switch(game->snake_direction)
+    switch(game->snake->direction)
     {
         case UP:    game->snake->cy = 1; break;
         case LEFT:  game->snake->cx = 1; break;
@@ -233,7 +258,7 @@ void stopAtWall(Game* game)
 
 void stopAtSelf(Game* game)
 {
-    switch(game->snake_direction)
+    switch(game->snake->direction)
     {
         case UP:    game->snake->cy = game->snake->previousY; break;
         case LEFT:  game->snake->cx = game->snake->previousX; break;
@@ -260,9 +285,9 @@ Game* InitializeGame()
     }
     game->window->gameProc = GameWindowProc;
 
-    game->isRunning = TRUE;
+    game->isRunning = true;
     game->state = MENU;
-    game->isMuted = FALSE;
+    game->isMuted = false;
     game->createWindow = CreateGameWindow;
     game->destroy = GameDestroy;
     game->update = GameLoop;
@@ -270,7 +295,6 @@ Game* InitializeGame()
     game->resizeDoubleBuffer = resizeDoubleBuffer;
     game->doubleBufferingCleanup = doubleBufferingCleanup;
     game->render = renderGame;
-    game->snake_direction = RIGHT;
     game->deltatime = .0f;
     game->buffer = (DOUBLE_BUFFER*)malloc(sizeof(DOUBLE_BUFFER));
     if(!game->buffer)
@@ -316,14 +340,15 @@ void prepareGame(Game *game)
 void startGame(Game *game)
 {
     // Transition from MENU to WAIT_MOVE_INPUT if start was clicked
-    if(game && (game->state == MENU && startClicked) || (game->state == GAMEOVER && restartClicked))
+    if(game && ((game->state == MENU && startClicked) || (game->state == GAMEOVER && restartClicked)))
     {
         prepareGame(game);
-        if(startClicked) startClicked = FALSE;
-        if(restartClicked) restartClicked = FALSE;
+        if(startClicked) startClicked = false;
+        if(restartClicked) restartClicked = false;
         game->state = WAIT_MOVE_INPUT;
         SetupSprite(&game->pellet->sprite, "resources/assets/sprites/apple_1.bmp", 1, 1);
-        SetupSprite(&game->snake->head_sprite, "resources/assets/sprites/snake_head_spritesheet.bmp", 1, 4);
+        SetupSprite(&game->snake->headSprite, "resources/assets/sprites/snakehead.bmp", 4, 3);
+        SetupSprite(&game->snake->sprite, "resources/assets/sprites/snakebody.bmp", 5, 4);
     }
 
     // Transition to PLAYING if a direction key is pressed
@@ -351,10 +376,10 @@ void resetGame(Game *game)
         {
             if(isPointInRect(&restartRect, mouse.x, mouse.y))
             {
-                restartClicked = TRUE;
+                restartClicked = true;
                 if(score > high_score) high_score = score;
                 score = 0;
-                hasClicked = FALSE;
+                hasClicked = false;
             }
         }
     }
@@ -401,11 +426,11 @@ void manageSound(Game* game)
         if(isPointInRect(&audioRect, mouse.x, mouse.y))
         {
             game->isMuted = !game->isMuted;
-            hasClicked = FALSE;
+            hasClicked = false;
         }
     }
     if(game->isMuted)
         muteGame(&sound);
-    playGameSound(&game->state, &sound, game->isMuted);
+    else
+        playGameSound(&game->state, &sound, game->isMuted);
 }
-

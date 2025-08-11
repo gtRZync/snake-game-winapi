@@ -1,5 +1,3 @@
-#ifndef MENU_H
-#define MENU_H
 #pragma once
 
 #include "utilis.h"
@@ -29,6 +27,3 @@ void handleClick(HWND hwnd, const RECT* rect, uint8_t id, const POINT* mouse);
 void addGlowing(HDC hdc, const MenuStyle* style, COLORREF font_color, LPCWSTR text, int32_t y, int32_t x_offset, int32_t y_offset);
 
 
-
-
-#endif 

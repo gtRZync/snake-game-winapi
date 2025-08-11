@@ -64,22 +64,24 @@ log :
 
 ## How to Play
 
-1. **Clone the repo**  
-   Or just download the ZIP and extract:
-   ```bash
-   git clone https://github.com/gtRZync/snake-game-winapi.git
-   ```
+1. **Clone the Repository**  
+   Download the game by cloning the repo or grabbing the ZIP file:
+```bash
+git clone https://github.com/gtRZync/snake-game-winapi.git
+```
 
-2. **Open the folder in VSCode**
+2. **Open the Project in VS Code**
+   Navigate to the project folder and open it using your preferred code editor (VS Code recommended).
 
-3. **Press `CTRL + SHIFT + B`**  
-   This runs the `tasks.json` build task and compiles the game.
+3. **Build and Run the Game**
+   Open the terminal inside your IDE and run:
 
-4. **Run the game**  
-   Navigate to the `bin/` folder and double-click:
-   ```
-   snake_game.exe
-   ```
+```bash
+make run
+```
+
+   This will compile the game using the `Makefile` and launch it automatically.
+
 
 ---
 
@@ -92,7 +94,7 @@ log :
 
 ## Gameplay
 
-![Snake Game](resources/assets/screenshots/gameplay_v4.gif)  
+![Snake Game](resources/assets/screenshots/gameplay_v5.gif)  
 
 ---
 
@@ -105,4 +107,4 @@ log :
 
 ## License
 
-This project is licensed under the [GPL v3 License](LICENSE).
+This project is licensed under the [MIT License](LICENSE).

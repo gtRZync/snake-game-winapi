@@ -24,19 +24,19 @@ void SetupSprite(SPRITE* sprite, LPCSTR filepath, uint8_t totalRows, uint8_t tot
     }
 }
 
-void setSpriteRow(SPRITE *sprite, uint8_t rowIndex)
+void setFrameRow(const SPRITE* sprite, Frame* frame, uint8_t rowIndex)
 {
-    if(sprite->totalRows >=rowIndex)
+    if (rowIndex < sprite->totalRows)
     {
-        sprite->currentRow = rowIndex;
+        frame->row = rowIndex;
     }
 }
 
-void setSpriteFrame(SPRITE *sprite, uint8_t frameIndex)
+void setFrameCol(const SPRITE* sprite, Frame* frame, uint8_t frameIndex)
 {
-    if(sprite->totalCols >= frameIndex)
+    if(frameIndex < sprite->totalCols)
     {
-        sprite->currentFrame = frameIndex;
+        frame->col = frameIndex;
     }
 }
 

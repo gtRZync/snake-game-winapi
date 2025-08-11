@@ -4,6 +4,7 @@ Snake* createSnake()
 {
     int start_coord[] = {7, 10, 6, 10, 5, 10};
     size_t size = sizeof(start_coord) / sizeof(start_coord[0]);
+    DIRECTIONS dir = RIGHT;
     Snake* snake = (Snake*)malloc(sizeof(Snake));
     if(!snake)
     {
@@ -11,7 +12,7 @@ Snake* createSnake()
         return NULL;
     }
     snake->head = NULL;
-    snake->head = createSnakeList(start_coord, size);
+    snake->head = createSnakeList(start_coord, size, dir);
     if(!snake->head)
     {
         MessageBoxW(NULL, L"Memory Allocation for snake->head failed.", L"malloc failed", MB_OK | MB_ICONERROR);
@@ -22,35 +23,36 @@ Snake* createSnake()
     snake->previousY = 0;
     snake->cx = start_coord[0];
     snake->cy = start_coord[1];
+    snake->direction = dir;
     snake->headRect = SETUP_RECT(snake->cx, snake->cy, 1);
     snake->body = SETUP_RECT(0, 0, 0); //! Null rect
-    snake->shouldGrow = FALSE;
-    snake->isMoving = TRUE;
-    snake->isDead = FALSE;
-    snake->scale = 2.94f;
+    snake->shouldGrow = false;
+    snake->isMoving = true;
+    snake->isDead = false;
+    snake->scale = 1.f;
     snake->sprite = (SPRITE){ };
-    snake->head_sprite = (SPRITE){ };
+    snake->headSprite = (SPRITE){ };
     return snake;
 }
 
-SnakeNode* createSnakeList(int *coords, size_t array_size)
+SnakeNode* createSnakeList(int *coords, size_t array_size, DIRECTIONS dir)
 {
     if(array_size < 1)
     {
         MessageBoxW(NULL, L"Can't have a null-sized array.", L"Array-size Error", MB_OK | MB_ICONWARNING);
         return NULL;
     }
-    SnakeNode* head = createNode(coords[0], coords[1]);
+    SnakeNode* head = createNode(coords[0], coords[1], dir);
     SnakeNode* current = head;
     for(int i = 2 ; i < array_size ; i += 2)
     {
-        current->next = createNode(coords[i], coords[i+1]);
+        current->next = createNode(coords[i], coords[i+1], dir);
         current = current->next;
     }
     return head;
 }
 
-SnakeNode* createNode(int cx, int cy)
+SnakeNode* createNode(int cx, int cy, DIRECTIONS dir)
 {
     SnakeNode* new_node = malloc(sizeof(SnakeNode));
     if(!new_node)
@@ -60,6 +62,7 @@ SnakeNode* createNode(int cx, int cy)
     }
     new_node->x = cx;
     new_node->y = cy;
+    new_node->direction = dir;
     new_node->next = NULL;
     return new_node;
 }
@@ -107,9 +110,9 @@ void logAndFreeSnakeMemory(SnakeNode* head, const char* filename) //! time displ
     fclose(fp);
 }
 
-void addHead(SnakeNode** head, int cx, int cy)
+void addHead(SnakeNode** head, int cx, int cy, DIRECTIONS dir)
 {
-    SnakeNode* new_node = createNode(cx, cy);
+    SnakeNode* new_node = createNode(cx, cy, dir);
     new_node->next = *head;
     (*head) = new_node;
 }
@@ -133,4 +136,25 @@ void removeTail(SnakeNode** head_ptr_ptr)
     SAFE_FREE(current->next);
 }
 
-
+#ifdef DEBUG
+void printSnakeDirections(const SnakeNode* head) {
+    const SnakeNode* current = head;
+    printf("Snake Directions: ");
+
+    while (current)
+    {
+        if (current == head)
+            printf("[HEAD: %s] -> ", directionToString(current->direction));
+        else if (current->next == NULL)
+            printf("[TAIL: %s]", directionToString(current->direction));
+        else
+            printf("%s -> ", directionToString(current->direction));
+
+        current = current->next;
+    }
+
+    printf("\n");
+}
+#endif
+
+
