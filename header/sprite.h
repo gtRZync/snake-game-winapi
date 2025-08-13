@@ -17,11 +17,15 @@ typedef interface tagSprites
 
 typedef struct Frame
 {
-    uint8_t row, col;
+    union
+    {
+       struct {uint8_t row, col; };
+       struct {uint8_t totalRows, totalCols; };
+    };
 }Frame;
 
 void ShowLastErrorMessage(const char* where);
-void SetupSprite(SPRITE *sprite, LPCSTR filepath, uint8_t totalRows, uint8_t totalCols);
+void SetupSprite(SPRITE *sprite, LPCSTR filepath, const Frame dimensions);
 void setFrameRow(const SPRITE* sprite, Frame* frame, uint8_t rowIndex);
 void setFrameCol(const SPRITE* sprite, Frame* frame, uint8_t frameIndex);
 void SpriteCleanup(SPRITE* sprite);

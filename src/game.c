@@ -190,6 +190,7 @@ void UpdateGame(Game *game)
 void renderGame(Game* game, int32_t cx, int32_t cy)
 {
     renderToBackBuffer(game->window->hwnd, &game->state, game->buffer->backBuffer, game->pellet, game->snake);
+    if(debugMode)debugStat(game->buffer->backBuffer, game);
     copyToFrontBuffer(game->buffer->backBuffer, game->window->hdc, cx, cy);
 }
 
@@ -205,7 +206,7 @@ void GameLoop(Game* game)
             if (msg.message == WM_QUIT)
             {
                 game->isRunning = false;
-                _exitCode = (int32_t)msg.wParam;
+                _exitCode = (int32_t)msg.wParam; //TODO : add msg to game.window
                 break;
             }
 
@@ -346,9 +347,9 @@ void startGame(Game *game)
         if(startClicked) startClicked = false;
         if(restartClicked) restartClicked = false;
         game->state = WAIT_MOVE_INPUT;
-        SetupSprite(&game->pellet->sprite, "resources/assets/sprites/apple_1.bmp", 1, 1);
-        SetupSprite(&game->snake->headSprite, "resources/assets/sprites/snakehead.bmp", 4, 3);
-        SetupSprite(&game->snake->sprite, "resources/assets/sprites/snakebody.bmp", 5, 4);
+        SetupSprite(&game->pellet->sprite, "resources/assets/sprites/apple_1.bmp", (const Frame){.totalRows=1, .totalCols=1});
+        SetupSprite(&game->snake->headSprite, "resources/assets/sprites/snakehead.bmp", (const Frame){.totalRows=4, .totalCols=2});
+        SetupSprite(&game->snake->sprite, "resources/assets/sprites/snakebody.bmp", (const Frame){.totalRows=5, .totalCols=4});
     }
 
     // Transition to PLAYING if a direction key is pressed
@@ -433,4 +434,36 @@ void manageSound(Game* game)
         muteGame(&sound);
     else
         playGameSound(&game->state, &sound, game->isMuted);
+}
+
+void debugStat(HDC hdc, Game* game)
+{
+    uint8_t scale_x = 3, scale_y = 8;
+    int32_t x, center_y;
+    x = 3;
+    center_y = ((GRID_HEIGHT) / 2) + 2; //? adding two to center it according to the grid
+    HFONT hFont = NULL;
+    char buffer[64];
+    const char* state = (game->state == MENU) ? "MENU" :
+                            (game->state == WAIT_MOVE_INPUT) ? "WAIT_MOVE_INPUT" :
+                            (game->state == PLAYING) ? "PLAYING" :
+                            (game->state == PAUSED) ? "PAUSED" : "GAMEOVER";
+                            
+
+    RECT rect = SCALE_RECT(x, center_y, scale_x, scale_y);
+    HFONT oldFont = CreateAndSelectFont(hdc, &hFont, -12, "JetBrains Mono", white);
+    renderTransparentLayer(hdc, true, &rect);
+
+    sprintf(buffer, "GameState = %s", state);
+    TextOut(hdc, ((x - scale_x) + 2)* TILE_SIZE, (center_y - scale_y) * TILE_SIZE, "Debug : ", 9);
+    TextOut(hdc, (x - scale_x) * TILE_SIZE, ((center_y - scale_y) + 1) * TILE_SIZE, buffer, lstrlen(buffer));
+    sprintf(buffer, "hasClicked = %s", hasClicked ? "true":"false");
+    TextOut(hdc, (x - scale_x) * TILE_SIZE, ((center_y - scale_y) + 2) * TILE_SIZE, buffer, lstrlen(buffer));
+    sprintf(buffer, "restartClicked = %s", restartClicked ? "true":"false");
+    TextOut(hdc, (x - scale_x) * TILE_SIZE, ((center_y - scale_y) + 3) * TILE_SIZE, buffer, lstrlen(buffer));
+    sprintf(buffer, "isMuted = %s", game->isMuted ? "true":"false");
+    TextOut(hdc, (x - scale_x) * TILE_SIZE, ((center_y - scale_y) + 4) * TILE_SIZE, buffer, lstrlen(buffer));
+
+    SelectObject(hdc, oldFont);
+    DeleteFont(&hFont);
 }

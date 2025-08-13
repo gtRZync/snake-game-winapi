@@ -27,7 +27,8 @@
 #include "sprite.h"
 
 #define NUM_DIRECTIONS 4
-#define HEAD 0
+#define HEAD_ALIVE 0
+#define HEAD_DEAD 1
 typedef enum tagDirections
 {
     UP,

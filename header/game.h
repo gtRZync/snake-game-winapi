@@ -55,3 +55,4 @@ void prepareGame(Game *game);
 void startGame(Game* game);
 void handleReset(Game* game);
 void manageSound(Game* game);
+void debugStat(HDC hdc, Game* game);

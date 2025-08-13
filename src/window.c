@@ -76,11 +76,11 @@ LRESULT CALLBACK GameWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
                 screen_width = ClientArea.right - ClientArea.left;
                 screen_height = ClientArea.bottom - ClientArea.top;
             }
-            SetupSprite(&title, "resources/assets/sprites/snake_banner.bmp", 1, 1);
-            SetupSprite(&keys, "resources/assets/sprites/keys.bmp", 1, 1);
-            SetupSprite(&sound, "resources/assets/sprites/sound.bmp", 1, 2);
-            SetupSprite(&trophee, "resources/assets/sprites/trophee.bmp", 1, 1);
-            SetupSprite(&restart_sprite, "resources/assets/sprites/restart_button.bmp", 1, 1);
+            SetupSprite(&title, "resources/assets/sprites/snake_banner.bmp", (const Frame){.totalRows=1, .totalCols=1});
+            SetupSprite(&keys, "resources/assets/sprites/keys.bmp", (const Frame){.totalRows=1, .totalCols=1});
+            SetupSprite(&sound, "resources/assets/sprites/sound.bmp", (const Frame){.totalRows=1, .totalCols=2});
+            SetupSprite(&trophee, "resources/assets/sprites/trophee.bmp", (const Frame){.totalRows=1, .totalCols=1});
+            SetupSprite(&restart_sprite, "resources/assets/sprites/restart_button.bmp", (const Frame){.totalRows=1, .totalCols=1});
         }break;
 
         case WM_SETCURSOR:

@@ -39,7 +39,11 @@ Frame frames[NUM_INDEXES] = {
 void drawSnake(HDC hdc, Snake* snake)
 {
     snake->headRect = SETUP_RECT(snake->head->x,snake->head->y, 1);
-    snake->head->frame =(Frame) {.row=directionToIndex(snake->head->direction),.col=HEAD};
+    if(snake->isMoving)
+        snake->head->frame =(Frame) {.row=directionToIndex(snake->head->direction),.col=HEAD_ALIVE};
+    else
+        snake->head->frame =(Frame) {.row=directionToIndex(snake->head->direction),.col=HEAD_DEAD};
+
     renderSprite(
         hdc, &snake->headSprite, 
         snake->headRect.left, 
@@ -121,36 +125,6 @@ void drawPellet(HDC hdc, Pellet* pellet)
 }
 
 
-void debugStat(HDC hdc, GAMESTATE* gameState)
-{
-    uint8_t scale_x = 3, scale_y = 8;
-    int32_t x, center_y;
-    x = 3;
-    center_y = ((GRID_HEIGHT) / 2) + 2; //? adding two to center it according to the grid
-    HFONT hFont = NULL;
-    char buffer[64];
-    const char* state = (*gameState == MENU) ? "MENU" :
-                            (*gameState == WAIT_MOVE_INPUT) ? "WAIT_MOVE_INPUT" :
-                            (*gameState == PLAYING) ? "PLAYING" :
-                            (*gameState == PAUSED) ? "PAUSED" : "GAMEOVER";
-                            
-
-    RECT rect = SCALE_RECT(x, center_y, scale_x, scale_y);
-    HFONT oldFont = CreateAndSelectFont(hdc, &hFont, -12, "JetBrains Mono", white);
-    renderTransparentLayer(hdc, true, &rect);
-
-    sprintf(buffer, "GameState = %s", state);
-    TextOut(hdc, ((x - scale_x) + 2)* TILE_SIZE, (center_y - scale_y) * TILE_SIZE, "Debug : ", 9);
-    TextOut(hdc, (x - scale_x) * TILE_SIZE, ((center_y - scale_y) + 1) * TILE_SIZE, buffer, lstrlen(buffer));
-    sprintf(buffer, "hasClicked = %s", hasClicked ? "true":"false");
-    TextOut(hdc, (x - scale_x) * TILE_SIZE, ((center_y - scale_y) + 2) * TILE_SIZE, buffer, lstrlen(buffer));
-    sprintf(buffer, "restartClicked = %s", restartClicked ? "true":"false");
-    TextOut(hdc, (x - scale_x) * TILE_SIZE, ((center_y - scale_y) + 3) * TILE_SIZE, buffer, lstrlen(buffer));
-
-    SelectObject(hdc, oldFont);
-    DeleteFont(&hFont);
-}
-
 void renderToBackBuffer(HWND hwnd, GAMESTATE* gameState, HDC back_buffer, Pellet* pellet, Snake* snake)
 {
     RECT screen = {0, 0, screen_width, screen_height};
@@ -167,7 +141,6 @@ void renderToBackBuffer(HWND hwnd, GAMESTATE* gameState, HDC back_buffer, Pellet
         renderOnGameOver(back_buffer, snake, pellet,gameState);
         renderControlKeysOverlay(back_buffer, &keys, gameState);
     }
-    if(debugMode) debugStat(back_buffer, gameState);
 }
 
 void copyToFrontBuffer(HDC back_buffer, HDC front_buffer, int32_t cx, int32_t cy)

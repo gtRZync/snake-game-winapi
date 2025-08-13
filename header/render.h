@@ -16,7 +16,6 @@ void renderGrid(HDC hdc);
 void renderHeader(HDC hdc, SPRITE* sprite);
 void drawSnake(HDC hdc, Snake* snake);
 void drawPellet(HDC hdc, Pellet* pellet);
-void debugStat(HDC hdc, GAMESTATE* gameState);
 void renderToBackBuffer(HWND hwnd, GAMESTATE* gameState, HDC back_buffer, Pellet* pellet, Snake* snake);
 void copyToFrontBuffer(HDC back_buffer, HDC front_buffer, int32_t cx, int32_t cy);
 void renderOnGameOver(HDC hdc, Snake* snake, Pellet* pellet, GAMESTATE* gameState);
