@@ -13,12 +13,12 @@
 #include "double_buffer.h"
 #include "utilis.h"
 
-interface Game;
+struct Game;
 
-typedef interface Window
+typedef struct Window
 {
     HWND hwnd;
-    WNDCLASS wc;
+    WNDCLASS class;
     MSG msg;
     WNDPROC gameProc;
     HCURSOR cursor;
@@ -28,10 +28,7 @@ typedef interface Window
     int32_t height;
 }Window;
 
-
-extern MSG msg;
-
 #define GameEntryPoint()\
 INT APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, INT nShowCmd)
 LRESULT CALLBACK GameWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-void CreateGameWindow(interface Game* game, HINSTANCE hInstance, int nShowCmd);
+void CreateGameWindow(struct Game* game, HINSTANCE hInstance, int nShowCmd);

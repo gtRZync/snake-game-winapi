@@ -6,15 +6,17 @@
 
 void CreateGameWindow(Game* game, HINSTANCE hInstance, int nShowCmd)
 {
-    game->window->CLASS_NAME = "SnakeGameClass";
-    game->window->wc = (WNDCLASS){ };
-    game->window->wc.lpszClassName = game->window->CLASS_NAME;
-    game->window->wc.lpfnWndProc = game->window->gameProc;
-    game->window->wc.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_SNAKE_ICON));
-    game->window->wc.hCursor = LoadCursor(hInstance, (LPSTR)IDC_ARROW);
-    game->window->wc.hInstance = hInstance;
-    game->window->wc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 3);
-    if(!RegisterClass(&game->window->wc))
+    Window* window = game->window;
+    window->CLASS_NAME = "SnakeGameClass";
+    window->class = (WNDCLASS){ };
+    window->class.style = CS_OWNDC;
+    window->class.lpszClassName = window->CLASS_NAME;
+    window->class.lpfnWndProc = window->gameProc;
+    window->class.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_SNAKE_ICON));
+    window->class.hCursor = LoadCursor(hInstance, (LPSTR)IDC_ARROW);
+    window->class.hInstance = hInstance;
+    window->class.hbrBackground = (HBRUSH)(COLOR_WINDOW + 3);
+    if(!RegisterClass(&window->class))
     {
         MessageBoxW(NULL, L"Error registering class", L"Registration error", MB_OK | MB_ICONERROR);
         game->destroy(game);
@@ -22,9 +24,9 @@ void CreateGameWindow(Game* game, HINSTANCE hInstance, int nShowCmd)
     }
 
     
-    game->window->hwnd = CreateWindowExA(
+    window->hwnd = CreateWindowExA(
         0,
-        game->window->CLASS_NAME,
+        window->CLASS_NAME,
         "Snake Game",
         WS_OVERLAPPEDWINDOW,
         CW_CENTERED_X,
@@ -37,16 +39,16 @@ void CreateGameWindow(Game* game, HINSTANCE hInstance, int nShowCmd)
         game
     );
     
-    if(!game->window->hwnd)
+    if(!window->hwnd)
     {
         MessageBoxW(NULL, L"Error creating window", L"Creation error", MB_OK | MB_ICONERROR);
         game->destroy(game);
         exit(EXIT_FAILURE);
     }
-    ShowWindow(game->window->hwnd, nShowCmd);
-    UpdateWindow(game->window->hwnd);
-    game->window->hdc = GetDC(game->window->hwnd);
-    game->setupDoubleBuffering(game->window->hwnd, game->buffer, screen_width, screen_height);
+    ShowWindow(window->hwnd, nShowCmd);
+    UpdateWindow(window->hwnd);
+    window->hdc = GetDC(window->hwnd);
+    setupDoubleBuffering(window->hwnd, game->buffer, screen_width, screen_height);
 }
 
 

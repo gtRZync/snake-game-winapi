@@ -1,7 +1,6 @@
 #include "render.h"
 
 int32_t screen_height, screen_width;
-MSG msg = { };
 int32_t score = 0;
 int32_t high_score = 0;
 SPRITE title;

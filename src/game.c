@@ -64,7 +64,7 @@ void checkCollisions(Game* game)
 #endif
 }
 
-boolean isCollisionSnakeBody(Snake *snake)
+bool isCollisionSnakeBody(Snake *snake)
 {
     for(SnakeNode* i = snake->head ; i != NULL ; i = i->next)
         {
@@ -76,7 +76,7 @@ boolean isCollisionSnakeBody(Snake *snake)
     return false;
 }
 
-boolean isCollisionSnakePellet(Game* game)
+bool isCollisionSnakePellet(Game* game)
 {
     RECT collisionRect;
     return (IntersectRect(&collisionRect, &game->snake->headRect, &game->pellet->rect));
@@ -201,17 +201,17 @@ void GameLoop(Game* game)
 
     while (game->isRunning)
     {
-        while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+        while (PeekMessage(&game->window->msg, NULL, 0, 0, PM_REMOVE))
         {
-            if (msg.message == WM_QUIT)
+            if (game->window->msg.message == WM_QUIT)
             {
                 game->isRunning = false;
-                _exitCode = (int32_t)msg.wParam; //TODO : add msg to game.window
+                _exitCode = (int32_t)game->window->msg.wParam; 
                 break;
             }
 
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
+            TranslateMessage(&game->window->msg);
+            DispatchMessage(&game->window->msg);
         }
 
         DWORD currentTime = GetTickCount();

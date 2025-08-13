@@ -17,6 +17,7 @@
 #define CURVE_RIGHT_TO_DOWN_COL 3
 
 
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -61,7 +62,7 @@ extern Frame frames[NUM_INDEXES];
 extern int32_t screen_height, screen_width;
 extern int32_t score, high_score;
 extern int32_t _exitCode;
-extern boolean hasClicked, startClicked, restartClicked;
+extern bool hasClicked, startClicked, restartClicked;
 extern RECT audioRect;
 extern RECT restartRect;
 extern bool debugMode;

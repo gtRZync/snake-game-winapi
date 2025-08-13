@@ -3,7 +3,7 @@
 #include "utilis.h"
 #include "font.h"
 
-typedef interface tagStyle
+typedef struct tagStyle
 {
     UINT font_size;
     HFONT hFont;
@@ -16,7 +16,7 @@ typedef interface tagStyle
     uint8_t length;
 }MenuStyle;
 
-typedef interface tagMenu
+typedef struct tagMenu
 {
     const wchar_t* text;
 }MenuOptions;

@@ -1,10 +1,11 @@
 #pragma once 
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <stdint.h>
 #include <stdio.h>
 
 //TODO: Refactor To decouple currentRow and Frame
-typedef interface tagSprites
+typedef struct tagSprites
 {
     HDC memDC;
     HBITMAP sheet;

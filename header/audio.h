@@ -2,5 +2,5 @@
 #include "utilis.h"
 
 void muteGame(const SPRITE* sprite);
-void playGameSound(const GAMESTATE* gameState, const SPRITE* sprite, boolean isMuted);
+void playGameSound(const GAMESTATE* gameState, const SPRITE* sprite, bool isMuted);
 

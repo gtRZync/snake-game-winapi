@@ -6,7 +6,7 @@
 #include "audio.h"
 
 
-typedef interface Game
+typedef struct Game
 {
     GAMESTATE state;
     Window* window;
@@ -15,17 +15,17 @@ typedef interface Game
     HINSTANCE hInstance;
     DOUBLE_BUFFER* buffer;
 
-    void (*createWindow)(interface Game* game, HINSTANCE hInstance, int nShowCmd);
-    void (*update)(interface Game* game);
-    void (*destroy)(interface Game* game);
+    void (*createWindow)(struct Game* game, HINSTANCE hInstance, int nShowCmd);
+    void (*update)(struct Game* game);
+    void (*destroy)(struct Game* game);
     void (*setupDoubleBuffering)(HWND hwnd, DOUBLE_BUFFER* lpDoubleBuffer, int cx, int cy);
     void (*resizeDoubleBuffer)(HWND hwnd, DOUBLE_BUFFER *lpDoubleBuffer, int cx, int cy);
     void (*doubleBufferingCleanup)(DOUBLE_BUFFER* lpDoubleBuffer);
-    void (*render)(interface Game* game, int32_t cx, int32_t cy);
-    void (*restart)(interface Game* game);
+    void (*render)(struct Game* game, int32_t cx, int32_t cy);
+    void (*restart)(struct Game* game);
 
-    boolean isRunning;
-    boolean isMuted;
+    bool isRunning;
+    bool isMuted;
     float deltatime;
 }Game;
 
@@ -36,8 +36,8 @@ void FatalAllocError(LPCWSTR what);
 DIRECTIONS getReversedDirection(DIRECTIONS direction);
 float interpolateScale(float start, float end, float t);
 void moveSnake(Snake* snake, int nextX, int nextY, DIRECTIONS dir);
-boolean isCollisionSnakeBody(Snake* snake);
-boolean isCollisionSnakePellet(Game* game);
+bool isCollisionSnakeBody(Snake* snake);
+bool isCollisionSnakePellet(Game* game);
 void checkSelfCollision(Game* game);
 void checkWallCollision(Game* game);
 void checkCollisions(Game* game);

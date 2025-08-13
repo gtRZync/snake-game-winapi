@@ -2,7 +2,7 @@
 
 #include "utilis.h"
 
-typedef interface SnakeNode
+typedef struct SnakeNode
 {
     int32_t x, y;
     struct SnakeNode* next;
@@ -10,7 +10,7 @@ typedef interface SnakeNode
     Frame frame;
 } SnakeNode;
 
-typedef interface tagSnake
+typedef struct tagSnake
 {
     int32_t cx;
     int32_t cy;
@@ -20,9 +20,9 @@ typedef interface tagSnake
     RECT headRect;
     RECT body;
     SnakeNode* head;
-    boolean shouldGrow;
-    boolean isMoving;
-    boolean isDead;//! useless rn , maybe for animation in the future
+    bool shouldGrow;
+    bool isMoving;
+    bool isDead;//! useless rn , maybe for animation in the future
     SPRITE sprite;
     SPRITE headSprite;
     uint8_t scale;

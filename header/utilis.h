@@ -33,7 +33,7 @@
 #define turquoise        RGB(0, 162, 232) 
 
 
-boolean isPointInRect(const RECT* rect, int32_t clickedX, int32_t clickedY);
+bool isPointInRect(const RECT* rect, int32_t clickedX, int32_t clickedY);
 uint8_t directionToIndex(DIRECTIONS dir);
 const char* directionToString(DIRECTIONS dir);
 
