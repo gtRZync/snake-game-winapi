@@ -94,7 +94,7 @@ make run
 
 ## Gameplay
 
-![Snake Game](resources/assets/screenshots/gameplay_v5.gif)  
+![Snake Game](resources/demo/gameplay_v5.gif)  
 
 ---
 
