@@ -11,9 +11,7 @@
 
 
 
-This is a simple **Snake game** coded in pure **C** using the **Windows API** — no external libraries used.  
-Rendering is currently done using **GDI objects**, like `Rectangle` and `Ellipse`, and the snake is implemented as a **linked list**.  
-Right now, it’s all about the basics — more sprite support yet to come.
+A classic Snake game built in pure C using only the Windows API — no external libraries, no dependencies. Retro-style visuals and (semi)smooth gameplay, all rendered with custom sprites and Win32 code.
 
 ---
 
@@ -54,6 +52,17 @@ log :
 8 nodes was freed.
 ```
 
+---
+
+## Tech Stack
+
+- Language: C (C99)
+
+- Graphics: Win32 GDI with sprite blitting
+
+- Platform: Windows (Desktop)
+
+- Compiler: gcc.exe or any Win32-compatible C compiler
 ---
 
 ## Limitations (for now)
