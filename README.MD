@@ -56,6 +56,17 @@ log :
 
 ---
 
+## Tech Stack
+
+- Language: C (C99)
+
+- Graphics: Win32 GDI with sprite blitting
+
+- Platform: Windows (Desktop)
+
+- Compiler: gcc.exe or any Win32-compatible C compiler
+---
+
 ## Limitations (for now)
 
 - No sound effect
