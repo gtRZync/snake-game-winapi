@@ -196,8 +196,8 @@ void renderGame(Game* game, int32_t cx, int32_t cy)
 
 void GameLoop(Game* game)
 {
-    const DWORD frameDelay = 100;
-    DWORD lastFrameTime = GetTickCount();
+    const DWORD frameDelay = 130;
+    ULONGLONG lastFrameTime = GetTickCount64();
 
     while (game->isRunning)
     {
@@ -214,7 +214,7 @@ void GameLoop(Game* game)
             DispatchMessage(&game->window->msg);
         }
 
-        DWORD currentTime = GetTickCount();
+        ULONGLONG currentTime = GetTickCount64();
         if (currentTime - lastFrameTime >= frameDelay)
         {
             lastFrameTime = currentTime;

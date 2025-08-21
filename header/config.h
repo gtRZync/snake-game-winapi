@@ -1,5 +1,7 @@
 #pragma once
 #define TILE_SIZE 32
+#define SHADOW_OFFSET 6
+#define BODY_OFFSET 8
 #define GRID_WIDTH  26
 #define GRID_HEIGHT 19 
 #define DEBUG

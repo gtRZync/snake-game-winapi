@@ -5,6 +5,7 @@
 #define SCALE_RECT(cx, cy, scale_x, scale_y) (RECT){(cx - scale_x) * TILE_SIZE, (cy - scale_y) * TILE_SIZE, (cx + scale_x) * TILE_SIZE, (cy + scale_y) * TILE_SIZE}
 #define SETUP_RECT(cx, cy, scaled_size) (RECT){(cx) * TILE_SIZE, (cy) * TILE_SIZE, (cx + scaled_size) * TILE_SIZE, (cy + scaled_size) * TILE_SIZE}
 #define SAFE_FREE(p) do {if((p) != NULL){ free(p); p = NULL;}} while(0)
+#define CENTER(var)(var * TILE_SIZE + TILE_SIZE / 2)
 
 //----------------------------Color section -------------------------------------
 #define red              RGB(255, 0, 0)

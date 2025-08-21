@@ -35,6 +35,41 @@ Frame frames[NUM_INDEXES] = {
     {.row=0, .col=1}//SOUND
 };
 
+// void drawSnake(HDC hdc, Snake* snake) {
+
+//     if(!snake || !snake->head) return;
+
+//     SnakeNode* current = snake->head;
+//     HPEN bodyPen = CreatePen(PS_SOLID, TILE_SIZE - 4, RGB(30, 200, 120));
+//     HPEN shadowPen = CreatePen(PS_SOLID, TILE_SIZE - 4, black);
+//     snake->headRect = SETUP_RECT(snake->head->x,snake->head->y, 1);
+    
+//     HGDIOBJ oldPen = SelectObject(hdc, shadowPen);
+//     while (current)
+//     {
+//         if(current != snake->head) 
+//             snake->body = SETUP_RECT(current->x,current->y, 1);
+//         MoveToEx(hdc, CENTER(current->x), CENTER(current->y) + SHADOW_OFFSET, NULL);
+//         current = current->next;
+//         if(current)
+//             LineTo(hdc, CENTER(current->x), CENTER(current->y) + SHADOW_OFFSET);
+//     }
+    
+//     current = snake->head;
+//     SelectObject(hdc, bodyPen);
+//     while (current)
+//     {
+        
+//         MoveToEx(hdc, CENTER(current->x), CENTER(current->y), NULL);
+//         current = current->next;
+//         if(current)
+//             LineTo(hdc, CENTER(current->x), CENTER(current->y));
+//     }
+//     SelectObject(hdc, oldPen);
+//     DeleteObject(bodyPen);
+//     DeleteObject(shadowPen);
+// }
+
 void drawSnake(HDC hdc, Snake* snake)
 {
     snake->headRect = SETUP_RECT(snake->head->x,snake->head->y, 1);
@@ -107,8 +142,8 @@ void drawSnake(HDC hdc, Snake* snake)
 void drawPellet(HDC hdc, Pellet* pellet)
 {
     // Compute the center of the tile
-    int32_t centerX = pellet->cx * TILE_SIZE + TILE_SIZE / 2;
-    int32_t centerY = pellet->cy * TILE_SIZE + TILE_SIZE / 2;
+    int32_t centerX = CENTER(pellet->cx);
+    int32_t centerY = CENTER(pellet->cy);
 
     pellet->rect = SETUP_RECT(pellet->cx, pellet->cy, 1);
 
