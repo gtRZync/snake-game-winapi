@@ -24,15 +24,21 @@ $(RES): $(RC)
 	@windres $(RC) -O coff -o $(RES)
 
 # Link the final executable
-$(OUT): $(OBJ) $(RES)
+$(OUT): $(OBJ) $(RES) | bin
 	@$(CC) $(OBJ) $(RES) -o $(OUT) $(LDFLAGS)
 
+bin:
+	@if not exist bin mkdir bin
+
 # Compile source files to obj/ directory
-obj/%.o: src/%.c
+obj/%.o: src/%.c | obj
 	@$(CC) $(CFLAGS) -c $< -o $@
+
+obj:
+	@if not exist obj mkdir obj
 
 clean:
 	@rm -f obj/*.o bin/*.exe resources/*.res
 
 run: all
-	@"$(OUT)"
+	@$(OUT)
