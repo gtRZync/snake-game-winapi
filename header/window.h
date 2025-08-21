@@ -17,7 +17,7 @@ struct Game;
 
 typedef struct Window
 {
-    HWND hwnd;
+    HWND handle;
     WNDCLASS class;
     MSG msg;
     WNDPROC gameProc;

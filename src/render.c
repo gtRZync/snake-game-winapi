@@ -6,10 +6,12 @@ int32_t high_score = 0;
 SPRITE title;
 SPRITE keys;
 SPRITE sound;
-SPRITE trophee;
+SPRITE trophy;
 SPRITE restart_sprite;
+SPRITE home_sprite;
 RECT audioRect;
 RECT restartRect;
+RECT homeRect;
 
 static MenuOptions mainMenu[] = {
     {L"Start"},
@@ -31,8 +33,9 @@ static MenuStyle style =
 };
 
 Frame frames[NUM_INDEXES] = {
+    {.row=0, .col=1},//SOUND
     {.row=0, .col=0},//RESTART
-    {.row=0, .col=1}//SOUND
+    {.row=0, .col=0}//HOME
 };
 
 // void drawSnake(HDC hdc, Snake* snake) {
@@ -264,59 +267,45 @@ void renderHeader(HDC hdc, SPRITE* sprite)
     DeleteFont(&hFont);
 }
 
-void renderOnGameOver(HDC hdc, Snake *snake, Pellet* pellet, GAMESTATE* gameState)
-{
-    float scale = 5.8f;
-    char buffer[16];
-    int32_t sprite_x = (trophee.width) * scale; 
-    int32_t sprite2_x = (pellet->sprite.width) * scale; 
-    int32_t textY, textX;
+void renderOnGameOver(HDC hdc, Snake *snake, Pellet* pellet, GAMESTATE* gameState) {
+    if (*gameState != GAMEOVER || snake->isMoving) return;
 
-    if(!snake->isMoving)
-    {
-        uint8_t rectScaleX = 8;
-        uint8_t rectScaleY = 4;
-        int32_t center_x, center_y;
-        center_x = GRID_WIDTH / 2;
-        center_y = ((GRID_HEIGHT) / 2) + 2;
-        HFONT hFont = NULL;
+    const float scale = 5.6f;
+    const float buttonScale = scale - 1;
+    const int inflateX = -21, inflateY = -21;
 
-        HFONT oldFont = CreateAndSelectFont(hdc, &hFont, font_size + 15, "Wobble Board", white);
-        RECT rect = SCALE_RECT(center_x, center_y, rectScaleX, rectScaleY);
-        
-        if(*gameState == GAMEOVER)
-        {
-            renderTransparentLayer(hdc, true, &rect);
-            TextOutA(hdc, (center_x - 7) * TILE_SIZE, (center_y + 2) * TILE_SIZE , "GameOver Buddy", 15);
-            renderSprite(hdc, &trophee, (center_x - 5) * TILE_SIZE, (center_y - 4) * TILE_SIZE, scale,(Frame){.row=0, .col=0}, red);
-            renderSprite(hdc, &pellet->sprite, (center_x + 2) * TILE_SIZE, (center_y - 4) * TILE_SIZE, scale ,(Frame){.row=0, .col=0}, turquoise);
-            renderSprite(hdc, &restart_sprite, (center_x - 5) * TILE_SIZE, (center_y + (rectScaleY - 1) )* TILE_SIZE, scale - 1 ,frames[RESTART], turquoise);
-            sprintf(buffer, "%d", high_score);
-            
-            int textW = FetchTextX(hdc, buffer);
-            textY = (center_y - 1) * TILE_SIZE;
-            textX = (center_x - 5) * TILE_SIZE + ((sprite_x - textW) / 2); 
+    const int center_x = GRID_WIDTH / 2;
+    const int center_y = GRID_HEIGHT / 2 + 2;
 
-            //TODO : add json or file read high_score
-            //!HIGH_SCORE
-            TextOutA(hdc,textX ,textY, buffer, lstrlen(buffer));
-            //!SCORE
-            sprintf(buffer, "%d", score);
-            textW = FetchTextX(hdc, buffer);
-            textX = (center_x + 2) * TILE_SIZE + ((sprite2_x - textW) / 2); 
-            TextOutA(hdc,textX ,textY, buffer, lstrlen(buffer));
-            
-            restartRect = (RECT)
-            {
-                (center_x - 5) * TILE_SIZE, 
-                (center_y + rectScaleY) * TILE_SIZE, 
-                (center_x - 5) * TILE_SIZE + restart_sprite.width * scale, 
-                (center_y + rectScaleY) * TILE_SIZE + restart_sprite.height * scale
-            };
-        }
-        SelectObject(hdc, oldFont);
-        DeleteFont(&hFont);
-    }
+    RECT rect = SCALE_RECT(center_x, center_y, 8, 7);
+
+    // Fonts
+    HFONT hFont = NULL;
+    HFONT oldFont = CreateAndSelectFont(hdc, &hFont, -(font_size + 15), "Wobble Board", white);
+
+    renderTransparentLayer(hdc, true, &rect);
+    renderGameOverText(hdc, &rect);
+    renderTrophies(hdc, center_x, center_y, scale, pellet);
+
+    // Button Rendering
+    int posY = (center_y + 3) * TILE_SIZE;
+    int posX_restart = (center_x - 6) * TILE_SIZE;
+    int posX_home = (center_x + 1) * TILE_SIZE;
+
+    renderButton(hdc, &restart_sprite, posX_restart, posY, buttonScale, frames[RESTART], turquoise, &restartRect, inflateX, inflateY);
+    renderButton(hdc, &home_sprite, posX_home, posY, buttonScale, frames[HOME], turquoise, &homeRect, inflateX, inflateY);
+
+    // Score Rendering
+    int trophyW = trophy.width * scale;
+    int pelletW = pellet->sprite.width * scale;
+    renderScores(hdc, center_x, center_y, trophyW, pelletW);
+
+    // Button Text
+    renderButtonsText(hdc, center_x, center_y, home_sprite.width * scale - 1, restart_sprite.width * scale - 1, font_size);
+
+    // Cleanup
+    SelectObject(hdc, oldFont);
+    DeleteFont(&hFont);
 }
 
 void renderSprite(HDC hdc, SPRITE* sprite, uint32_t cx, uint32_t cy, float scale, const Frame frame, UINT transparentColorKey)
@@ -356,6 +345,23 @@ void renderSprite(HDC hdc, SPRITE* sprite, uint32_t cx, uint32_t cy, float scale
         transparentColorKey
     );
     DeleteDC(sprite->memDC);
+}
+
+void setupRectAndRenderSprite(HDC hdc, SPRITE *sprite, uint32_t posX, uint32_t posY, float scale, const Frame frame, UINT transparentColorKey, RECT* outRect, int8_t inflateX, int8_t inflateY)
+{
+    renderSprite(hdc, sprite, posX, posY, scale, frame, transparentColorKey);
+    if(outRect) {
+        *outRect = (RECT)
+        {
+            posX,
+            posY,
+            posX + sprite->width * scale,
+            posY + sprite->height * scale 
+        };
+        if(inflateX != 0 || inflateY != 0) {
+            InflateRect(outRect, inflateX, inflateY);
+        }
+    }
 }
 
 void renderTransparentLayer(HDC hdc, BOOL is_rounded, RECT* rect)
@@ -467,4 +473,60 @@ Frame getCornerFrame(DIRECTIONS fromDir, DIRECTIONS toDir)
     else if (fromDir == RIGHT && toDir == UP)
         return (Frame){.row=SEGMENT_CURVE_UP, .col=CURVE_RIGHT_TO_UP_COL};
     return (Frame){}; // Default
+}
+
+
+void renderGameOverText(HDC hdc, RECT* rect) {
+    const char* gameover = "GAMEOVER";
+    RECT gameOverRect = *rect;
+    gameOverRect.top += 35;
+
+    DrawTextA(hdc, gameover, -1, &gameOverRect, DT_CENTER | DT_SINGLELINE);
+}
+
+void renderTrophies(HDC hdc, int center_x, int center_y, float scale, Pellet* pellet) {
+    renderSprite(hdc, &trophy, (center_x - 5) * TILE_SIZE, (center_y - 4) * TILE_SIZE, scale, (Frame){.row = 0, .col = 0}, red);
+    renderSprite(hdc, &pellet->sprite, (center_x + 2) * TILE_SIZE, (center_y - 4) * TILE_SIZE, scale, (Frame){.row = 0, .col = 0}, turquoise);
+}
+
+void renderButton(HDC hdc, SPRITE* sprite, int posX, int posY, float scale, Frame frame, COLORREF color, RECT* outRect, int inflateX, int inflateY) {
+    setupRectAndRenderSprite(hdc, sprite, posX, posY, scale, frame, color, outRect, inflateX, inflateY);
+}
+
+void renderScoreValue(HDC hdc, int value, int posX, int posY, int spriteW) {
+    char buffer[16];
+    sprintf(buffer, "%d", value);
+    int textW = FetchTextX(hdc, buffer);
+    int textX = posX + ((spriteW - textW) / 2);
+
+    TextOutA(hdc, textX, posY, buffer, lstrlen(buffer));
+}
+
+void renderButtonsText(HDC hdc, int center_x, int center_y, int homeW, int restartW, int font_size) {
+    const char* restart = "RESTART";
+    const char* home = "HOME";
+
+    HFONT hFont = NULL;
+    HFONT oldFont = CreateAndSelectFont(hdc, &hFont, -font_size, "Wobble Board", white);
+    int textY = (center_y + 3) * TILE_SIZE;
+
+    // HOME
+    int homeTextW = FetchTextX(hdc, home);
+    int homeX = (center_x + 1) * TILE_SIZE + ((homeW - homeTextW) / 2);
+    TextOutA(hdc, homeX - 10, textY, home, lstrlen(home));
+
+    // RESTART
+    int restartTextW = FetchTextX(hdc, restart);
+    int restartX = (center_x - 6) * TILE_SIZE + ((restartW - restartTextW) / 2);
+    TextOutA(hdc, restartX - 15, textY, restart, lstrlen(restart));
+
+    SelectObject(hdc, oldFont);
+    DeleteFont(&hFont);
+}
+
+void renderScores(HDC hdc, int center_x, int center_y, int trophyW, int pelletW) {
+    int textY = center_y * TILE_SIZE;
+
+    renderScoreValue(hdc, high_score, (center_x - 5) * TILE_SIZE, textY, trophyW);
+    renderScoreValue(hdc, score, (center_x + 2) * TILE_SIZE, textY, pelletW);
 }

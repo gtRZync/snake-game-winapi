@@ -38,7 +38,7 @@ obj:
 	@if not exist obj mkdir obj
 
 clean:
-	@rm -f obj/*.o bin/*.exe resources/*.res
+	@del /Q obj\*.o bin\*.exe resources\*.res
 
 run: all
 	@$(OUT)

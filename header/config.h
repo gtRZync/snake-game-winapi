@@ -58,15 +58,16 @@ typedef enum tagGameStates
     GAMEOVER
 }GAMESTATE;
 
-typedef enum INDEXES {RESTART, SOUND, NUM_INDEXES}INDEXES;
+typedef enum INDEXES {SOUND, RESTART, HOME, NUM_INDEXES}INDEXES;
 
 extern Frame frames[NUM_INDEXES];
 extern int32_t screen_height, screen_width;
 extern int32_t score, high_score;
 extern int32_t _exitCode;
-extern bool hasClicked, startClicked, restartClicked;
+extern bool hasClicked, hasPressed, startClicked, restartClicked;
 extern RECT audioRect;
 extern RECT restartRect;
+extern RECT homeRect;
 extern bool debugMode;
 
 //------------------- Defining scales ---------------------------------

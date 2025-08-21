@@ -189,7 +189,7 @@ void UpdateGame(Game *game)
 
 void renderGame(Game* game, int32_t cx, int32_t cy)
 {
-    renderToBackBuffer(game->window->hwnd, &game->state, game->buffer->backBuffer, game->pellet, game->snake);
+    renderToBackBuffer(game->window->handle, &game->state, game->buffer->backBuffer, game->pellet, game->snake);
     if(debugMode)debugStat(game->buffer->backBuffer, game);
     copyToFrontBuffer(game->buffer->backBuffer, game->window->hdc, cx, cy);
 }
@@ -221,7 +221,7 @@ void GameLoop(Game* game)
 
             if (GetAsyncKeyState(VK_ESCAPE) & 0x8000)
             {
-                PostMessage(game->window->hwnd, WM_CLOSE, 0, 0);
+                PostMessage(game->window->handle, WM_CLOSE, 0, 0);
             }
 
             if (GetAsyncKeyState(VK_F3) & 0x8000)
@@ -230,9 +230,9 @@ void GameLoop(Game* game)
             }
 
             game->render(game, screen_width, screen_height);
-            manageSound(game);
             startGame(game);
-            handleReset(game);
+            handleButtonClick(game);
+            processGameOverButton(game->window->handle);
 
             if (game->state == PLAYING)
             {
@@ -312,42 +312,47 @@ Game* InitializeGame()
 
 void prepareGame(Game *game)
 {
-    if(game)
+    if (!game) return;
+    if(game->snake == NULL && game->pellet == NULL)
     {
-        //!Reset game
-        if(game->snake && game->pellet)
+        game->pellet = initPellet();
+        game->snake = createSnake();
+        if(!game->snake)
         {
-            if(game->snake)
-            {
-                logAndFreeSnakeMemory(game->snake->head,"free_logs/free_logs.txt");
-                SAFE_FREE(game->snake);
-            }
-            SAFE_FREE(game->pellet);
-        }
-        if(game->snake == NULL && game->pellet == NULL)
-        {
-            game->pellet = initPellet();
-            game->snake = createSnake();
-            if(!game->snake)
-            {
-                FatalAllocError(L"Memory Allocation for game->snake failed.");
-                GameDestroy(game);
-                exit(EXIT_FAILURE);
-            }
+            FatalAllocError(L"Memory Allocation for game->snake failed.");
+            GameDestroy(game);
+            exit(EXIT_FAILURE);
         }
     }
 }
 
+void resetGame(Game *game)
+{
+    if (!game) return;
+    if(game->snake && game->pellet)
+    {
+        if(game->snake)
+        {
+            logAndFreeSnakeMemory(game->snake->head,"free_logs/free_logs.txt");
+            SAFE_FREE(game->snake);
+        }
+        SAFE_FREE(game->pellet);
+        if(score > high_score) high_score = score;
+        score = 0;
+    }
+}
 void startGame(Game *game)
 {
+    if (!game) return;
     // Transition from MENU to WAIT_MOVE_INPUT if start was clicked
-    if(game && ((game->state == MENU && startClicked) || (game->state == GAMEOVER && restartClicked)))
+    if((game->state == MENU && startClicked) || (game->state == GAMEOVER && restartClicked))
     {
+        resetGame(game);
         prepareGame(game);
         if(startClicked) startClicked = false;
         if(restartClicked) restartClicked = false;
         game->state = WAIT_MOVE_INPUT;
-        SetupSprite(&game->pellet->sprite, "resources/assets/sprites/apple_1.bmp", (const Frame){.totalRows=1, .totalCols=1});
+        SetupSprite(&game->pellet->sprite, "resources/assets/sprites/apple.bmp", (const Frame){.totalRows=1, .totalCols=1});
         SetupSprite(&game->snake->headSprite, "resources/assets/sprites/snakehead.bmp", (const Frame){.totalRows=4, .totalCols=2});
         SetupSprite(&game->snake->sprite, "resources/assets/sprites/snakebody.bmp", (const Frame){.totalRows=5, .totalCols=4});
     }
@@ -366,24 +371,36 @@ void startGame(Game *game)
     }
 }
 
-void handleReset(Game *game)
+void processGameOverClick(Game *game, const RECT* rect, bool isRestarting)
 {
-    if(game->state == GAMEOVER)
+    if (!game) return;
+
+    if  (game->state != GAMEOVER) return;
+
+    POINT mouse;
+    GetCursorPos(&mouse);
+    ScreenToClient(game->window->handle, &mouse);
+    if(isPointInRect(rect, mouse.x, mouse.y))
     {
-        POINT mouse;
-        GetCursorPos(&mouse);
-        ScreenToClient(game->window->hwnd, &mouse);
         if(hasClicked)
         {
-            if(isPointInRect(&restartRect, mouse.x, mouse.y))
-            {
+            if(isRestarting) {
                 restartClicked = true;
-                if(score > high_score) high_score = score;
-                score = 0;
-                hasClicked = false;
             }
+            else
+            {
+                redirectMenu(game);
+            }
+            hasClicked = false;
         }
     }
+}
+
+void handleButtonClick(Game* game) {
+    bool isRestarting = true;
+    manageSound(game);
+    processGameOverClick(game, &restartRect, isRestarting);
+    processGameOverClick(game, &homeRect, !isRestarting);
 }
 
 void GameDestroy(Game* game)
@@ -403,7 +420,7 @@ void GameDestroy(Game* game)
         }
         if(game->window)
         {
-            HWND window = game->window->hwnd;
+            HWND window = game->window->handle;
             ReleaseDC(window, game->window->hdc);
             DestroyWindow(window);
             SAFE_FREE(game->window);
@@ -421,7 +438,7 @@ void manageSound(Game* game)
 {
     POINT mouse;
     GetCursorPos(&mouse);
-    ScreenToClient(game->window->hwnd, &mouse);
+    ScreenToClient(game->window->handle, &mouse);
     if(hasClicked)
     {
         if(isPointInRect(&audioRect, mouse.x, mouse.y))
@@ -434,6 +451,36 @@ void manageSound(Game* game)
         muteGame(&sound);
     else
         playGameSound(&game->state, &sound, game->isMuted);
+}
+
+void animateButton(HWND hwnd, const RECT* rect, const SPRITE* sprite, Frame* frame) {
+    const int DEFAULT_INDEX = 0;
+    const int HOVERED_INDEX = 1;
+    const int CLICKED_INDEX = 2;
+    POINT mouse;
+    GetCursorPos(&mouse);
+    ScreenToClient(hwnd, &mouse);
+    if(!hasPressed && isPointInRect(rect, mouse.x, mouse.y)) {
+        setFrameCol(sprite, frame, HOVERED_INDEX);
+    }
+    else if (hasPressed && isPointInRect(rect, mouse.x, mouse.y)) 
+    {
+        setFrameCol(sprite, frame, CLICKED_INDEX);
+    }
+    else 
+    {
+        setFrameCol(sprite, frame, DEFAULT_INDEX);
+    }
+}
+
+void processGameOverButton(HWND hwnd) {
+    animateButton(hwnd, &restartRect, &restart_sprite, &frames[RESTART]);
+    animateButton(hwnd, &homeRect, &home_sprite, &frames[HOME]);
+}
+
+void redirectMenu(Game* game) {
+    resetGame(game);
+    game->state = MENU;
 }
 
 void debugStat(HDC hdc, Game* game)

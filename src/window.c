@@ -24,7 +24,7 @@ void CreateGameWindow(Game* game, HINSTANCE hInstance, int nShowCmd)
     }
 
     
-    window->hwnd = CreateWindowExA(
+    window->handle = CreateWindowExA(
         0,
         window->CLASS_NAME,
         "Snake Game",
@@ -39,16 +39,16 @@ void CreateGameWindow(Game* game, HINSTANCE hInstance, int nShowCmd)
         game
     );
     
-    if(!window->hwnd)
+    if(!window->handle)
     {
         MessageBoxW(NULL, L"Error creating window", L"Creation error", MB_OK | MB_ICONERROR);
         game->destroy(game);
         exit(EXIT_FAILURE);
     }
-    ShowWindow(window->hwnd, nShowCmd);
-    UpdateWindow(window->hwnd);
-    window->hdc = GetDC(window->hwnd);
-    setupDoubleBuffering(window->hwnd, game->buffer, screen_width, screen_height);
+    ShowWindow(window->handle, nShowCmd);
+    UpdateWindow(window->handle);
+    window->hdc = GetDC(window->handle);
+    setupDoubleBuffering(window->handle, game->buffer, screen_width, screen_height);
 }
 
 
@@ -81,8 +81,9 @@ LRESULT CALLBACK GameWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
             SetupSprite(&title, "resources/assets/sprites/snake_banner.bmp", (const Frame){.totalRows=1, .totalCols=1});
             SetupSprite(&keys, "resources/assets/sprites/keys.bmp", (const Frame){.totalRows=1, .totalCols=1});
             SetupSprite(&sound, "resources/assets/sprites/sound.bmp", (const Frame){.totalRows=1, .totalCols=2});
-            SetupSprite(&trophee, "resources/assets/sprites/trophee.bmp", (const Frame){.totalRows=1, .totalCols=1});
-            SetupSprite(&restart_sprite, "resources/assets/sprites/restart_button.bmp", (const Frame){.totalRows=1, .totalCols=1});
+            SetupSprite(&trophy, "resources/assets/sprites/trophy.bmp", (const Frame){.totalRows=1, .totalCols=1});
+            SetupSprite(&restart_sprite, "resources/assets/sprites/restart_button.bmp", (const Frame){.totalRows=1, .totalCols=3});
+            SetupSprite(&home_sprite, "resources/assets/sprites/home_button.bmp", (const Frame){.totalRows=1, .totalCols=3});
         }break;
 
         case WM_SETCURSOR:
@@ -97,6 +98,12 @@ LRESULT CALLBACK GameWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
         case WM_LBUTTONUP:
         {
             hasClicked = true;
+            hasPressed = false;
+        }break;
+
+        case WM_LBUTTONDOWN:
+        {
+            hasPressed = true;
         }break;
 
         case WM_SIZE:
@@ -118,8 +125,9 @@ LRESULT CALLBACK GameWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
             SpriteCleanup(&title);
             SpriteCleanup(&keys);
             SpriteCleanup(&sound);
-            SpriteCleanup(&trophee);
+            SpriteCleanup(&trophy);
             SpriteCleanup(&restart_sprite);
+            SpriteCleanup(&home_sprite);
             if(game) 
             {
                 if(game->pellet) 

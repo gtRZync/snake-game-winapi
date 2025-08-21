@@ -26,7 +26,7 @@
 #define pink             RGB(255, 192, 203)
 #define gold             RGB(255, 215, 0)
 #define copperRed        RGB(183, 80, 48)
-#define golden_brown     RGB(194,144,48);
+#define golden_brown     RGB(194,144,48)
 #define head_sprite_COLOR RGB(85, 107, 47)    // Olive
 #define SNAKE_BODY_COLOR RGB(139, 69, 19)    // SaddleBrown
 #define champagneSilver  RGB(230, 232, 234)
