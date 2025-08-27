@@ -1,5 +1,37 @@
 #include "snake.h"
 
+static SnakeNode* createNode(int cx, int cy, DIRECTIONS dir)
+{
+    SnakeNode* new_node = malloc(sizeof(SnakeNode));
+    if(!new_node)
+    {
+        MessageBoxW(NULL, L"Memory Allocation for new_node failed.", L"malloc failed", MB_OK | MB_ICONERROR); 
+        return NULL;
+    }
+    new_node->x = cx;
+    new_node->y = cy;
+    new_node->direction = dir;
+    new_node->next = NULL;
+    return new_node;
+}
+
+static SnakeNode* createSnakeList(int *coords, size_t array_size, DIRECTIONS dir)
+{
+    if(array_size < 1)
+    {
+        MessageBoxW(NULL, L"Can't have a null-sized array.", L"Array-size Error", MB_OK | MB_ICONWARNING);
+        return NULL;
+    }
+    SnakeNode* head = createNode(coords[0], coords[1], dir);
+    SnakeNode* current = head;
+    for(int i = 2 ; i < array_size ; i += 2)
+    {
+        current->next = createNode(coords[i], coords[i+1], dir);
+        current = current->next;
+    }
+    return head;
+}
+
 Snake* createSnake()
 {
     int start_coord[] = {7, 10, 6, 10, 5, 10};
@@ -35,39 +67,7 @@ Snake* createSnake()
     return snake;
 }
 
-SnakeNode* createSnakeList(int *coords, size_t array_size, DIRECTIONS dir)
-{
-    if(array_size < 1)
-    {
-        MessageBoxW(NULL, L"Can't have a null-sized array.", L"Array-size Error", MB_OK | MB_ICONWARNING);
-        return NULL;
-    }
-    SnakeNode* head = createNode(coords[0], coords[1], dir);
-    SnakeNode* current = head;
-    for(int i = 2 ; i < array_size ; i += 2)
-    {
-        current->next = createNode(coords[i], coords[i+1], dir);
-        current = current->next;
-    }
-    return head;
-}
-
-SnakeNode* createNode(int cx, int cy, DIRECTIONS dir)
-{
-    SnakeNode* new_node = malloc(sizeof(SnakeNode));
-    if(!new_node)
-    {
-        MessageBoxW(NULL, L"Memory Allocation for new_node failed.", L"malloc failed", MB_OK | MB_ICONERROR); 
-        return NULL;
-    }
-    new_node->x = cx;
-    new_node->y = cy;
-    new_node->direction = dir;
-    new_node->next = NULL;
-    return new_node;
-}
-
-void freeSnakeMemory(SnakeNode* head)
+static void freeSnakeMemory(SnakeNode* head)
 {
     if(head)
     {

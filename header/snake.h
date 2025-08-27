@@ -29,10 +29,6 @@ typedef struct tagSnake
 } Snake;
 
 
-
-SnakeNode* createNode(int cx, int cy, DIRECTIONS dir);
-SnakeNode* createSnakeList(int* coords, size_t array_size, DIRECTIONS dir);  
-void freeSnakeMemory(SnakeNode* head_ptr);
 void logAndFreeSnakeMemory(SnakeNode* head_ptr, const char* filename);
 void addHead(SnakeNode** head_ptr_ptr, int cx, int cy, DIRECTIONS dir);      
 void removeTail(SnakeNode** head_ptr_ptr);                   

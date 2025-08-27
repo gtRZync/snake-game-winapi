@@ -2,7 +2,7 @@
 
 bool hasClicked = false, startClicked = false, restartClicked = false, hasPressed = false;
 
-void addGlowing(HDC hdc, const MenuStyle* style, COLORREF font_color, LPCWSTR text, int32_t y, int32_t x_offset, int32_t y_offset)
+static void addGlowing(HDC hdc, const MenuStyle* style, COLORREF font_color, LPCWSTR text, int32_t y, int32_t x_offset, int32_t y_offset)
 {
     HFONT font;
     int32_t x;
@@ -23,6 +23,40 @@ void addGlowing(HDC hdc, const MenuStyle* style, COLORREF font_color, LPCWSTR te
     SelectObject(hdc, oldFont);
     DeleteFont(&font);
 }
+
+static void DrawCenteredTextForMenu(HDC hdc, LPCWSTR lpString, int starting_y)
+{
+    int32_t ctrwString;
+    FetchTextCenteredMetrics(hdc, &ctrwString, NULL, lpString);
+    TextOutW(hdc,
+        ctrwString,
+        starting_y, 
+        lpString, 
+        lstrlenW(lpString)
+    );
+}
+
+static void handleClick(HWND hwnd, const RECT *rect, uint8_t id, const POINT* mouse)
+{
+    if(isPointInRect(rect, mouse->x, mouse->y))
+    {
+        switch(id)
+        {
+            case 0:
+                startClicked = true;
+                break;
+
+            case 1:
+                MessageBoxW(NULL, L"Options Menu", L"Options", MB_OK | MB_ICONINFORMATION);
+                break;
+
+            case 2:
+                PostMessage(hwnd, WM_CLOSE, 0, 0);
+                break;
+        }
+    }
+}
+
 
 
 void drawMenu(HWND hwnd, HDC hdc, uint32_t topPart, MenuOptions* options, uint8_t n_options, COLORREF rectBrushColor, const MenuStyle* style)
@@ -85,37 +119,4 @@ void drawMenu(HWND hwnd, HDC hdc, uint32_t topPart, MenuOptions* options, uint8_
     }
     SelectObject(hdc, oldBrush);
     DeleteObject(brush);
-}
-
-void DrawCenteredTextForMenu(HDC hdc, LPCWSTR lpString, int starting_y)
-{
-    int32_t ctrwString;
-    FetchTextCenteredMetrics(hdc, &ctrwString, NULL, lpString);
-    TextOutW(hdc,
-        ctrwString,
-        starting_y, 
-        lpString, 
-        lstrlenW(lpString)
-    );
-}
-
-void handleClick(HWND hwnd, const RECT *rect, uint8_t id, const POINT* mouse)
-{
-    if(isPointInRect(rect, mouse->x, mouse->y))
-    {
-        switch(id)
-        {
-            case 0:
-                startClicked = true;
-                break;
-
-            case 1:
-                MessageBoxW(NULL, L"Options Menu", L"Options", MB_OK | MB_ICONINFORMATION);
-                break;
-
-            case 2:
-                PostMessage(hwnd, WM_CLOSE, 0, 0);
-                break;
-        }
-    }
 }

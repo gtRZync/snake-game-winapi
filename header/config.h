@@ -58,6 +58,12 @@ typedef enum tagGameStates
     GAMEOVER
 }GAMESTATE;
 
+typedef struct Input 
+{
+    bool restart;
+    bool start;
+}Input;
+
 typedef enum INDEXES {SOUND, RESTART, HOME, NUM_INDEXES}INDEXES;
 
 extern Frame frames[NUM_INDEXES];

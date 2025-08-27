@@ -1,5 +1,26 @@
 #include "render.h"
 
+// STATIC INTERNALS – private to render.c
+static void renderMenu(HWND hwnd, HDC hdc, const GAMESTATE* gameState);
+static void renderGrid(HDC hdc);
+static void renderHeader(HDC hdc, SPRITE* sprite);
+static void drawSnake(HDC hdc, Snake* snake);
+static void drawPellet(HDC hdc, Pellet* pellet);
+static void renderOnGameOver(HDC hdc, Snake* snake, Pellet* pellet, GAMESTATE* gameState);
+static void renderSprite(HDC hdc, SPRITE* sprite, uint32_t cx, uint32_t cy, float scale, const Frame frame, UINT transparentColorKey);
+static void setupRectAndRenderSprite(HDC hdc, SPRITE *sprite, uint32_t posX, uint32_t posY, float scale, const Frame frame, UINT transparentColorKey, RECT* outRect, int8_t inflateX, int8_t inflateY);
+static void renderControlKeysOverlay(HDC hdc, SPRITE* sprite, GAMESTATE* gameState);
+static int32_t renderTitle(HDC hdc, SPRITE *sprite, float scaleFactor);
+static void renderSoundIcon(HDC hdc, SPRITE *sprite, float scaleFactor);
+static Frame getCornerFrame(DIRECTIONS fromDir, DIRECTIONS toDir);
+static void test(HDC hdc, const RECT* lprect);
+static void renderGameOverText(HDC hdc, RECT* rect);
+static void renderTrophies(HDC hdc, int center_x, int center_y, float scale, Pellet* pellet) ;
+static void renderButton(HDC hdc, SPRITE* sprite, int posX, int posY, float scale, Frame frame, COLORREF color, RECT* outRect, int inflateX, int inflateY);
+static void renderScoreValue(HDC hdc, int value, int posX, int posY, int spriteW);
+static void renderButtonsText(HDC hdc, int center_x, int center_y, int homeW, int restartW, int font_size);
+static void renderScores(HDC hdc, int center_x, int center_y, int trophyW, int pelletW);
+
 int32_t screen_height, screen_width;
 int32_t score = 0;
 int32_t high_score = 0;
@@ -38,7 +59,68 @@ Frame frames[NUM_INDEXES] = {
     {.row=0, .col=0}//HOME
 };
 
-// void drawSnake(HDC hdc, Snake* snake) {
+// --- PUBLIC API IMPLEMENTATIONS ---
+void renderToBackBuffer(HWND hwnd, GAMESTATE* gameState, HDC back_buffer, Pellet* pellet, Snake* snake)
+{
+    RECT screen = {0, 0, screen_width, screen_height};
+    HBRUSH hBrush =  CreateSolidBrush(MENU_BG);
+    FillRect(back_buffer, &screen, hBrush);
+    DeleteObject(hBrush);
+    renderMenu(hwnd, back_buffer, gameState);
+    if(*gameState != MENU)
+    {
+        renderGrid(back_buffer);
+        drawPellet(back_buffer, pellet);
+        drawSnake(back_buffer, snake);
+        renderHeader(back_buffer, &pellet->sprite);
+        renderOnGameOver(back_buffer, snake, pellet,gameState);
+        renderControlKeysOverlay(back_buffer, &keys, gameState);
+    }
+}
+
+void copyToFrontBuffer(HDC back_buffer, HDC front_buffer, int32_t cx, int32_t cy)
+{
+    BitBlt(front_buffer, 0, 0, cx, cy, back_buffer, 0, 0, SRCCOPY);
+}
+
+void renderTransparentLayer(HDC hdc, BOOL is_rounded, RECT* rect)
+{
+    int32_t width = (rect->right - rect->left);
+    int32_t height = (rect->bottom - rect->top);
+    uint8_t cx = rect->left;
+    uint8_t cy = rect->top;
+    HRGN roundRct;
+
+    HDC memDC = CreateCompatibleDC(hdc);
+    HBITMAP hBitmap = CreateCompatibleBitmap(hdc, width, height);
+    HBRUSH overlayBrush = CreateSolidBrush(black);
+    HGDIOBJ oldBrush =(HBRUSH)SelectObject(memDC, overlayBrush);
+    HGDIOBJ oldBitmap = (HBITMAP)SelectObject(memDC, hBitmap);
+    
+    FillRect(memDC, rect, overlayBrush);
+    SelectObject(memDC, oldBrush);
+    DeleteObject(overlayBrush);
+    if(is_rounded)
+    {
+        roundRct = CreateRoundRectRgn(rect->left, rect->top, rect->right - 2, rect->bottom - 2, 30, 30);
+        SelectClipRgn(hdc, roundRct);
+        DeleteObject(roundRct);
+    }
+
+    
+    BLENDFUNCTION blendFunc = {AC_SRC_OVER, 0, (BYTE)210, 0};
+    AlphaBlend(hdc, cx, cy, width, height, memDC, 0 , 0, width, height, blendFunc);
+    
+    SelectObject(memDC, oldBitmap);
+    DeleteDC(memDC);
+    DeleteObject(hBitmap);
+    if(is_rounded)
+        SelectClipRgn(hdc, NULL);
+}
+
+// --- PRIVATE STATIC IMPLEMENTATIONS ---
+
+//static void drawSnake(HDC hdc, Snake* snake) {
 
 //     if(!snake || !snake->head) return;
 
@@ -73,7 +155,7 @@ Frame frames[NUM_INDEXES] = {
 //     DeleteObject(shadowPen);
 // }
 
-void drawSnake(HDC hdc, Snake* snake)
+static void drawSnake(HDC hdc, Snake* snake)
 {
     snake->headRect = SETUP_RECT(snake->head->x,snake->head->y, 1);
     if(snake->isMoving)
@@ -142,7 +224,7 @@ void drawSnake(HDC hdc, Snake* snake)
     }
 }
 
-void drawPellet(HDC hdc, Pellet* pellet)
+static void drawPellet(HDC hdc, Pellet* pellet)
 {
     // Compute the center of the tile
     int32_t centerX = CENTER(pellet->cx);
@@ -162,30 +244,7 @@ void drawPellet(HDC hdc, Pellet* pellet)
 }
 
 
-void renderToBackBuffer(HWND hwnd, GAMESTATE* gameState, HDC back_buffer, Pellet* pellet, Snake* snake)
-{
-    RECT screen = {0, 0, screen_width, screen_height};
-    HBRUSH hBrush =  CreateSolidBrush(MENU_BG);
-    FillRect(back_buffer, &screen, hBrush);
-    DeleteObject(hBrush);
-    renderMenu(hwnd, back_buffer, gameState);
-    if(*gameState != MENU)
-    {
-        renderGrid(back_buffer);
-        drawPellet(back_buffer, pellet);
-        drawSnake(back_buffer, snake);
-        renderHeader(back_buffer, &pellet->sprite);
-        renderOnGameOver(back_buffer, snake, pellet,gameState);
-        renderControlKeysOverlay(back_buffer, &keys, gameState);
-    }
-}
-
-void copyToFrontBuffer(HDC back_buffer, HDC front_buffer, int32_t cx, int32_t cy)
-{
-    BitBlt(front_buffer, 0, 0, cx, cy, back_buffer, 0, 0, SRCCOPY);
-}
-
-void renderMenu(HWND hwnd, HDC hdc, const GAMESTATE* gameState)
+static void renderMenu(HWND hwnd, HDC hdc, const GAMESTATE* gameState)
 {
     if(*gameState == MENU)
     {
@@ -198,7 +257,7 @@ void renderMenu(HWND hwnd, HDC hdc, const GAMESTATE* gameState)
     }
 }
 
-void renderGrid(HDC hdc)
+static void renderGrid(HDC hdc)
 {
     HBRUSH even_squareBrush = CreateSolidBrush(darkOrange);
     HBRUSH odd_squareBrush = CreateSolidBrush(lightOrange);
@@ -253,7 +312,7 @@ void renderGrid(HDC hdc)
     DeleteObject(panelBrush);
 }
 
-void renderHeader(HDC hdc, SPRITE* sprite)
+static void renderHeader(HDC hdc, SPRITE* sprite)
 {
     float scale = 4.1f;
     renderSoundIcon(hdc, &sound, scale);
@@ -267,7 +326,7 @@ void renderHeader(HDC hdc, SPRITE* sprite)
     DeleteFont(&hFont);
 }
 
-void renderOnGameOver(HDC hdc, Snake *snake, Pellet* pellet, GAMESTATE* gameState) {
+static void renderOnGameOver(HDC hdc, Snake *snake, Pellet* pellet, GAMESTATE* gameState) {
     if (*gameState != GAMEOVER || snake->isMoving) return;
 
     const float scale = 5.6f;
@@ -308,7 +367,7 @@ void renderOnGameOver(HDC hdc, Snake *snake, Pellet* pellet, GAMESTATE* gameStat
     DeleteFont(&hFont);
 }
 
-void renderSprite(HDC hdc, SPRITE* sprite, uint32_t cx, uint32_t cy, float scale, const Frame frame, UINT transparentColorKey)
+static void renderSprite(HDC hdc, SPRITE* sprite, uint32_t cx, uint32_t cy, float scale, const Frame frame, UINT transparentColorKey)
 {
     sprite->memDC = CreateCompatibleDC(hdc);
     SelectObject(sprite->memDC, sprite->sheet);
@@ -347,7 +406,7 @@ void renderSprite(HDC hdc, SPRITE* sprite, uint32_t cx, uint32_t cy, float scale
     DeleteDC(sprite->memDC);
 }
 
-void setupRectAndRenderSprite(HDC hdc, SPRITE *sprite, uint32_t posX, uint32_t posY, float scale, const Frame frame, UINT transparentColorKey, RECT* outRect, int8_t inflateX, int8_t inflateY)
+static void setupRectAndRenderSprite(HDC hdc, SPRITE *sprite, uint32_t posX, uint32_t posY, float scale, const Frame frame, UINT transparentColorKey, RECT* outRect, int8_t inflateX, int8_t inflateY)
 {
     renderSprite(hdc, sprite, posX, posY, scale, frame, transparentColorKey);
     if(outRect) {
@@ -364,42 +423,7 @@ void setupRectAndRenderSprite(HDC hdc, SPRITE *sprite, uint32_t posX, uint32_t p
     }
 }
 
-void renderTransparentLayer(HDC hdc, BOOL is_rounded, RECT* rect)
-{
-    int32_t width = (rect->right - rect->left);
-    int32_t height = (rect->bottom - rect->top);
-    uint8_t cx = rect->left;
-    uint8_t cy = rect->top;
-    HRGN roundRct;
-
-    HDC memDC = CreateCompatibleDC(hdc);
-    HBITMAP hBitmap = CreateCompatibleBitmap(hdc, width, height);
-    HBRUSH overlayBrush = CreateSolidBrush(black);
-    HGDIOBJ oldBrush =(HBRUSH)SelectObject(memDC, overlayBrush);
-    HGDIOBJ oldBitmap = (HBITMAP)SelectObject(memDC, hBitmap);
-    
-    FillRect(memDC, rect, overlayBrush);
-    SelectObject(memDC, oldBrush);
-    DeleteObject(overlayBrush);
-    if(is_rounded)
-    {
-        roundRct = CreateRoundRectRgn(rect->left, rect->top, rect->right - 2, rect->bottom - 2, 30, 30);
-        SelectClipRgn(hdc, roundRct);
-        DeleteObject(roundRct);
-    }
-
-    
-    BLENDFUNCTION blendFunc = {AC_SRC_OVER, 0, (BYTE)210, 0};
-    AlphaBlend(hdc, cx, cy, width, height, memDC, 0 , 0, width, height, blendFunc);
-    
-    SelectObject(memDC, oldBitmap);
-    DeleteDC(memDC);
-    DeleteObject(hBitmap);
-    if(is_rounded)
-        SelectClipRgn(hdc, NULL);
-}
-
-void renderControlKeysOverlay(HDC hdc, SPRITE* sprite, GAMESTATE* gameState)
+static void renderControlKeysOverlay(HDC hdc, SPRITE* sprite, GAMESTATE* gameState)
 {
     if(*gameState == WAIT_MOVE_INPUT && sprite)
     {    
@@ -417,7 +441,7 @@ void renderControlKeysOverlay(HDC hdc, SPRITE* sprite, GAMESTATE* gameState)
     }
 }
 
-int32_t renderTitle(HDC hdc, SPRITE *sprite, float scaleFactor)
+static int32_t renderTitle(HDC hdc, SPRITE *sprite, float scaleFactor)
 {
     if(sprite)
     {
@@ -432,7 +456,7 @@ int32_t renderTitle(HDC hdc, SPRITE *sprite, float scaleFactor)
     return -1;
 }
 
-void renderSoundIcon(HDC hdc, SPRITE *sprite, float scaleFactor)
+static void renderSoundIcon(HDC hdc, SPRITE *sprite, float scaleFactor)
 {
     if(sprite)
     {
@@ -443,7 +467,7 @@ void renderSoundIcon(HDC hdc, SPRITE *sprite, float scaleFactor)
     }
 }
 
-void test(HDC hdc, const RECT* lprect)
+static void test(HDC hdc, const RECT* lprect)
 {
     HPEN pen = CreatePen(PS_SOLID, 4, red);
     SelectObject(hdc, GetStockObject(NULL_BRUSH));
@@ -453,7 +477,7 @@ void test(HDC hdc, const RECT* lprect)
     DeleteObject(pen);
 }
 
-Frame getCornerFrame(DIRECTIONS fromDir, DIRECTIONS toDir)
+static Frame getCornerFrame(DIRECTIONS fromDir, DIRECTIONS toDir)
 {
     // Handle different corner combinations
     if ((fromDir == UP && toDir == RIGHT) )
@@ -476,7 +500,7 @@ Frame getCornerFrame(DIRECTIONS fromDir, DIRECTIONS toDir)
 }
 
 
-void renderGameOverText(HDC hdc, RECT* rect) {
+static void renderGameOverText(HDC hdc, RECT* rect) {
     const char* gameover = "GAMEOVER";
     RECT gameOverRect = *rect;
     gameOverRect.top += 35;
@@ -484,16 +508,16 @@ void renderGameOverText(HDC hdc, RECT* rect) {
     DrawTextA(hdc, gameover, -1, &gameOverRect, DT_CENTER | DT_SINGLELINE);
 }
 
-void renderTrophies(HDC hdc, int center_x, int center_y, float scale, Pellet* pellet) {
+static void renderTrophies(HDC hdc, int center_x, int center_y, float scale, Pellet* pellet) {
     renderSprite(hdc, &trophy, (center_x - 5) * TILE_SIZE, (center_y - 4) * TILE_SIZE, scale, (Frame){.row = 0, .col = 0}, red);
     renderSprite(hdc, &pellet->sprite, (center_x + 2) * TILE_SIZE, (center_y - 4) * TILE_SIZE, scale, (Frame){.row = 0, .col = 0}, turquoise);
 }
 
-void renderButton(HDC hdc, SPRITE* sprite, int posX, int posY, float scale, Frame frame, COLORREF color, RECT* outRect, int inflateX, int inflateY) {
+static void renderButton(HDC hdc, SPRITE* sprite, int posX, int posY, float scale, Frame frame, COLORREF color, RECT* outRect, int inflateX, int inflateY) {
     setupRectAndRenderSprite(hdc, sprite, posX, posY, scale, frame, color, outRect, inflateX, inflateY);
 }
 
-void renderScoreValue(HDC hdc, int value, int posX, int posY, int spriteW) {
+static void renderScoreValue(HDC hdc, int value, int posX, int posY, int spriteW) {
     char buffer[16];
     sprintf(buffer, "%d", value);
     int textW = FetchTextX(hdc, buffer);
@@ -502,7 +526,7 @@ void renderScoreValue(HDC hdc, int value, int posX, int posY, int spriteW) {
     TextOutA(hdc, textX, posY, buffer, lstrlen(buffer));
 }
 
-void renderButtonsText(HDC hdc, int center_x, int center_y, int homeW, int restartW, int font_size) {
+static void renderButtonsText(HDC hdc, int center_x, int center_y, int homeW, int restartW, int font_size) {
     const char* restart = "RESTART";
     const char* home = "HOME";
 
@@ -524,7 +548,7 @@ void renderButtonsText(HDC hdc, int center_x, int center_y, int homeW, int resta
     DeleteFont(&hFont);
 }
 
-void renderScores(HDC hdc, int center_x, int center_y, int trophyW, int pelletW) {
+static void renderScores(HDC hdc, int center_x, int center_y, int trophyW, int pelletW) {
     int textY = center_y * TILE_SIZE;
 
     renderScoreValue(hdc, high_score, (center_x - 5) * TILE_SIZE, textY, trophyW);

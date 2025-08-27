@@ -16,13 +16,15 @@ Pellet* initPellet()
     return pellet;
 }
 
+static inline int get_rand_min_max(int min, int max)
+{
+    return min + rand() % (max - min + 1);
+}
+
 void setPelletCoord(Pellet* pellet)
 {
     pellet->cx = get_rand_min_max(1, (GRID_WIDTH - 2));
     pellet->cy = get_rand_min_max(4, (GRID_HEIGHT - 5));
 }
 
-int get_rand_min_max(int min, int max)
-{
-    return min + rand() % (max - min + 1);
-}
+

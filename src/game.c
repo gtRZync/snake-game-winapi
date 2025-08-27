@@ -1,11 +1,89 @@
 #include "game.h"
 #include "utilis.h"
+#undef DEBUG
 
 bool debugMode = false;
 int32_t _exitCode;
 
+static void setRandomSeed();
+static void FatalAllocError(LPCWSTR what);
+static DIRECTIONS getReversedDirection(DIRECTIONS direction);
+static float interpolateScale(float start, float end, float t);
+static void moveSnake(Snake* snake, int nextX, int nextY, DIRECTIONS dir);
+static bool isCollisionSnakeBody(Snake* snake);
+static bool isCollisionSnakePellet(Game* game);
+static void checkSelfCollision(Game* game);
+static void checkWallCollision(Game* game);
+static void checkCollisions(Game* game);
+static void eatPellet(Game* game);
+static void updateSnakePosition(Game* game);
+static void changeDirection(DIRECTIONS *currentDirection, const GAMESTATE gameState);
+static void stopAtWall(Game* game);
+static void stopAtSelf(Game* game);
+static void animatePellet(Game* game);
+static void UpdateGame(Game* game);
+static void renderGame(Game* game, int32_t cx, int32_t cy);
+static void GameLoop(Game* game);
+static void GameDestroy(Game* game);
+static void prepareGame(Game *game);
+static void resetGame(Game* game);
+static void startGame(Game* game);
+static void manageSound(Game* game);
+static void debugStat(HDC hdc, Game* game);
+static void animateButton(HWND hwnd, const RECT* rect, const SPRITE* sprite, Frame* frame);
+static void processGameOverClick(Game *game, const RECT* rect, bool isRestarting);
+static void processInput(Game *game);
+static void handleGameOverButtonAnimation(HWND hwnd);
+static void redirectMenu(Game* game);
 
-void moveSnake(Snake* snake, int nextX, int nextY, DIRECTIONS dir)
+// --- PUBLIC API IMPLEMENTATIONS ---
+
+Game* InitializeGame()
+{
+    setRandomSeed();
+    Game* game = (Game*)malloc(sizeof(Game));
+    if(!game)
+    {
+        FatalAllocError(L"Memory Allocation for game failed.");
+        exit(EXIT_FAILURE);
+    }
+
+    game->window = (Window*)malloc(sizeof(Window));
+    if(!game->window)
+    {
+        FatalAllocError(L"Memory Allocation for game window failed.");
+        GameDestroy(game);
+        exit(EXIT_FAILURE);
+    }
+    game->window->gameProc = GameWindowProc;
+
+    game->isRunning = true;
+    game->state = MENU;
+    game->isMuted = false;
+    game->createWindow = CreateGameWindow;
+    game->destroy = GameDestroy;
+    game->update = GameLoop;
+    game->setupDoubleBuffering = setupDoubleBuffering;
+    game->resizeDoubleBuffer = resizeDoubleBuffer;
+    game->doubleBufferingCleanup = doubleBufferingCleanup;
+    game->render = renderGame;
+    game->deltatime = .0f;
+    game->buffer = (DOUBLE_BUFFER*)malloc(sizeof(DOUBLE_BUFFER));
+    if(!game->buffer)
+    {
+        FatalAllocError(L"Memory Allocation for game buffer failed.");
+        GameDestroy(game);
+        exit(EXIT_FAILURE);
+    }
+    game->snake = NULL;
+    game->pellet = NULL;
+    
+    return game;
+}
+
+// --- PRIVATE STATIC IMPLEMENTATIONS ---
+
+static void moveSnake(Snake* snake, int nextX, int nextY, DIRECTIONS dir)
 {
     addHead(&snake->head, nextX, nextY, dir); 
 
@@ -22,7 +100,7 @@ void moveSnake(Snake* snake, int nextX, int nextY, DIRECTIONS dir)
     }
 }
 
-void checkSelfCollision(Game* game)
+static void checkSelfCollision(Game* game)
 {
     if(isCollisionSnakeBody(game->snake))
     {
@@ -33,7 +111,7 @@ void checkSelfCollision(Game* game)
     }
 }
 
-void checkWallCollision(Game* game)
+static void checkWallCollision(Game* game)
 {
     if (game->snake->cx > GRID_WIDTH - 2 || game->snake->cx < 1 || 
         game->snake->cy > GRID_HEIGHT - 2 || game->snake->cy < 4)
@@ -45,7 +123,7 @@ void checkWallCollision(Game* game)
     }
 }
 
-void checkCollisions(Game* game)
+static void checkCollisions(Game* game)
 {
     checkSelfCollision(game);
     checkWallCollision(game);
@@ -64,7 +142,7 @@ void checkCollisions(Game* game)
 #endif
 }
 
-bool isCollisionSnakeBody(Snake *snake)
+static bool isCollisionSnakeBody(Snake *snake)
 {
     for(SnakeNode* i = snake->head ; i != NULL ; i = i->next)
         {
@@ -76,13 +154,13 @@ bool isCollisionSnakeBody(Snake *snake)
     return false;
 }
 
-bool isCollisionSnakePellet(Game* game)
+static bool isCollisionSnakePellet(Game* game)
 {
     RECT collisionRect;
     return (IntersectRect(&collisionRect, &game->snake->headRect, &game->pellet->rect));
 }
 
-DIRECTIONS getReversedDirection(DIRECTIONS direction)
+static DIRECTIONS getReversedDirection(DIRECTIONS direction)
 {
     switch(direction)
     {
@@ -94,12 +172,12 @@ DIRECTIONS getReversedDirection(DIRECTIONS direction)
     }
 }
 
-void setRandomSeed()
+static void setRandomSeed()
 {
     srand((unsigned) time(NULL));
 }
 
-void eatPellet(Game* game)
+static void eatPellet(Game* game)
 {
     if(isCollisionSnakePellet(game))
     {
@@ -111,7 +189,7 @@ void eatPellet(Game* game)
 }
 
 
-void updateSnakePosition(Game* game)
+static void updateSnakePosition(Game* game)
 {
     int32_t oldX = game->snake->cx;
     int32_t oldY = game->snake->cy;
@@ -135,8 +213,10 @@ void updateSnakePosition(Game* game)
 }
 
 
-void changeDirection(DIRECTIONS *currentDirection, SPRITE* sprite)
+static void changeDirection(DIRECTIONS *currentDirection, const GAMESTATE gameState)
 {
+    if (gameState != PLAYING) return;
+
     DIRECTIONS newDirection = *currentDirection;
     if (GetAsyncKeyState(VK_LEFT) & 0x8000) newDirection = LEFT;
     else if (GetAsyncKeyState(VK_RIGHT) & 0x8000) newDirection = RIGHT;
@@ -149,7 +229,7 @@ void changeDirection(DIRECTIONS *currentDirection, SPRITE* sprite)
     }
 }
 
-void animatePellet(Game* game)
+static void animatePellet(Game* game)
 {
     static float tick = 0.0f;
     const float TICK_INTERVAL = 0.5f;  
@@ -176,25 +256,28 @@ void animatePellet(Game* game)
 }
 
 //? Linear interpolation for smooth scaling
-float interpolateScale(float start, float end, float t) {
+static float interpolateScale(float start, float end, float t) {
     return start + (end - start) * t;
 }
 
-void UpdateGame(Game *game)
+static void UpdateGame(Game *game)
 {
+    if(game->state != PLAYING) return;
+
     updateSnakePosition(game);
     eatPellet(game);
     animatePellet(game);
+    manageSound(game);
 }
 
-void renderGame(Game* game, int32_t cx, int32_t cy)
+static void renderGame(Game* game, int32_t cx, int32_t cy)
 {
     renderToBackBuffer(game->window->handle, &game->state, game->buffer->backBuffer, game->pellet, game->snake);
     if(debugMode)debugStat(game->buffer->backBuffer, game);
     copyToFrontBuffer(game->buffer->backBuffer, game->window->hdc, cx, cy);
 }
 
-void GameLoop(Game* game)
+static void GameLoop(Game* game)
 {
     const DWORD frameDelay = 130;
     ULONGLONG lastFrameTime = GetTickCount64();
@@ -228,24 +311,18 @@ void GameLoop(Game* game)
             {
                 debugMode = !debugMode;
             }
-
+            processInput(game);
+            UpdateGame(game);
             game->render(game, screen_width, screen_height);
             startGame(game);
-            handleButtonClick(game);
-            processGameOverButton(game->window->handle);
-
-            if (game->state == PLAYING)
-            {
-                changeDirection(&game->snake->direction, &game->snake->headSprite);
-                UpdateGame(game);
-            }
+            handleGameOverButtonAnimation(game->window->handle);
 
             Sleep(1);
         }
     }
 }
 
-void stopAtWall(Game* game)
+static void stopAtWall(Game* game)
 {
     switch(game->snake->direction)
     {
@@ -257,7 +334,7 @@ void stopAtWall(Game* game)
 }
 
 
-void stopAtSelf(Game* game)
+static void stopAtSelf(Game* game)
 {
     switch(game->snake->direction)
     {
@@ -268,51 +345,8 @@ void stopAtSelf(Game* game)
     }
 }
 
-Game* InitializeGame()
+static void prepareGame(Game *game)
 {
-    Game* game = (Game*)malloc(sizeof(Game));
-    if(!game)
-    {
-        FatalAllocError(L"Memory Allocation for game failed.");
-        exit(EXIT_FAILURE);
-    }
-
-    game->window = (Window*)malloc(sizeof(Window));
-    if(!game->window)
-    {
-        FatalAllocError(L"Memory Allocation for game->window failed.");
-        GameDestroy(game);
-        exit(EXIT_FAILURE);
-    }
-    game->window->gameProc = GameWindowProc;
-
-    game->isRunning = true;
-    game->state = MENU;
-    game->isMuted = false;
-    game->createWindow = CreateGameWindow;
-    game->destroy = GameDestroy;
-    game->update = GameLoop;
-    game->setupDoubleBuffering = setupDoubleBuffering;
-    game->resizeDoubleBuffer = resizeDoubleBuffer;
-    game->doubleBufferingCleanup = doubleBufferingCleanup;
-    game->render = renderGame;
-    game->deltatime = .0f;
-    game->buffer = (DOUBLE_BUFFER*)malloc(sizeof(DOUBLE_BUFFER));
-    if(!game->buffer)
-    {
-        FatalAllocError(L"Memory Allocation for game->buffer failed.");
-        GameDestroy(game);
-        exit(EXIT_FAILURE);
-    }
-    game->snake = NULL;
-    game->pellet = NULL;
-    
-    return game;
-}
-
-void prepareGame(Game *game)
-{
-    if (!game) return;
     if(game->snake == NULL && game->pellet == NULL)
     {
         game->pellet = initPellet();
@@ -326,9 +360,8 @@ void prepareGame(Game *game)
     }
 }
 
-void resetGame(Game *game)
+static void resetGame(Game *game)
 {
-    if (!game) return;
     if(game->snake && game->pellet)
     {
         if(game->snake)
@@ -341,9 +374,8 @@ void resetGame(Game *game)
         score = 0;
     }
 }
-void startGame(Game *game)
+static void startGame(Game *game)
 {
-    if (!game) return;
     // Transition from MENU to WAIT_MOVE_INPUT if start was clicked
     if((game->state == MENU && startClicked) || (game->state == GAMEOVER && restartClicked))
     {
@@ -371,9 +403,8 @@ void startGame(Game *game)
     }
 }
 
-void processGameOverClick(Game *game, const RECT* rect, bool isRestarting)
+static void processGameOverClick(Game *game, const RECT* rect, bool isRestarting)
 {
-    if (!game) return;
 
     if  (game->state != GAMEOVER) return;
 
@@ -396,14 +427,14 @@ void processGameOverClick(Game *game, const RECT* rect, bool isRestarting)
     }
 }
 
-void handleButtonClick(Game* game) {
+static void processInput(Game* game) {
     bool isRestarting = true;
-    manageSound(game);
+    changeDirection(&game->snake->direction, game->state);
     processGameOverClick(game, &restartRect, isRestarting);
     processGameOverClick(game, &homeRect, !isRestarting);
 }
 
-void GameDestroy(Game* game)
+static void GameDestroy(Game* game)
 {
     if(game)
     {
@@ -429,13 +460,14 @@ void GameDestroy(Game* game)
     }
 }
 
-void FatalAllocError(LPCWSTR what)
+static void FatalAllocError(LPCWSTR what)
 {
     MessageBoxW(NULL, what, L"malloc failed", MB_OK | MB_ICONERROR);
 }
 
-void manageSound(Game* game)
+static void manageSound(Game* game)
 {
+
     POINT mouse;
     GetCursorPos(&mouse);
     ScreenToClient(game->window->handle, &mouse);
@@ -453,10 +485,13 @@ void manageSound(Game* game)
         playGameSound(&game->state, &sound, game->isMuted);
 }
 
-void animateButton(HWND hwnd, const RECT* rect, const SPRITE* sprite, Frame* frame) {
-    const int DEFAULT_INDEX = 0;
-    const int HOVERED_INDEX = 1;
-    const int CLICKED_INDEX = 2;
+static void animateButton(HWND hwnd, const RECT* rect, const SPRITE* sprite, Frame* frame) {
+    if(!hwnd) return;
+    if(!sprite || !frame) return;
+
+    static const int DEFAULT_INDEX = 0;
+    static const int HOVERED_INDEX = 1;
+    static const int CLICKED_INDEX = 2;
     POINT mouse;
     GetCursorPos(&mouse);
     ScreenToClient(hwnd, &mouse);
@@ -473,18 +508,18 @@ void animateButton(HWND hwnd, const RECT* rect, const SPRITE* sprite, Frame* fra
     }
 }
 
-void processGameOverButton(HWND hwnd) {
+static void handleGameOverButtonAnimation(HWND hwnd) {
     animateButton(hwnd, &restartRect, &restart_sprite, &frames[RESTART]);
     animateButton(hwnd, &homeRect, &home_sprite, &frames[HOME]);
 }
 
-void redirectMenu(Game* game) {
+static void redirectMenu(Game* game) {
     resetGame(game);
     game->state = MENU;
 }
 
-void debugStat(HDC hdc, Game* game)
-{
+static void debugStat(HDC hdc, Game* game)
+{   
     uint8_t scale_x = 3, scale_y = 8;
     int32_t x, center_y;
     x = 3;

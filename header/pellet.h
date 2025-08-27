@@ -13,4 +13,3 @@ typedef struct tagPellet
 
 Pellet* initPellet();
 void setPelletCoord(Pellet* pellet);
-int get_rand_min_max(int min, int max);

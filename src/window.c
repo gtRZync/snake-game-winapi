@@ -42,7 +42,7 @@ void CreateGameWindow(Game* game, HINSTANCE hInstance, int nShowCmd)
     if(!window->handle)
     {
         MessageBoxW(NULL, L"Error creating window", L"Creation error", MB_OK | MB_ICONERROR);
-        game->destroy(game);
+        game->destroy(game); //! skeptical bout this, still need to figure it out
         exit(EXIT_FAILURE);
     }
     ShowWindow(window->handle, nShowCmd);
@@ -94,7 +94,7 @@ LRESULT CALLBACK GameWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 
         case WM_ERASEBKGND:
             return 1;
-
+        //TODO: better input handling
         case WM_LBUTTONUP:
         {
             hasClicked = true;
