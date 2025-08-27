@@ -106,7 +106,7 @@ void logAndFreeSnakeMemory(SnakeNode* head, const char* filename) //! time displ
             free(temp);
         }
     }
-    fprintf(fp, "\nlog :\n%d nodes was freed.\n", i);
+    fprintf(fp, "\nlog :\n%d nodes were freed.\n", i);
     fclose(fp);
 }
 

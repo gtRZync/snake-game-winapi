@@ -466,7 +466,7 @@ static void renderSoundIcon(HDC hdc, SPRITE *sprite, float scaleFactor)
         renderSprite(hdc, sprite, iconX , iconY, scaleFactor,frames[SOUND], red);
     }
 }
-
+__attribute__((unused))
 static void test(HDC hdc, const RECT* lprect)
 {
     HPEN pen = CreatePen(PS_SOLID, 4, red);

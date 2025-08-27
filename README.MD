@@ -49,7 +49,7 @@ freeing node with coord (5, 11) (node: 7)
 freeing node with coord (5, 10) (node: 8)
 
 log :
-8 nodes was freed.
+8 nodes were freed.
 ```
 
 ---
