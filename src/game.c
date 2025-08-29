@@ -17,12 +17,12 @@ static void checkWallCollision(Game* game);
 static void checkCollisions(Game* game);
 static void eatPellet(Game* game);
 static void updateSnakePosition(Game* game);
-static void changeDirection(DIRECTIONS *currentDirection, const GAMESTATE gameState);
+static void changeDirection(Game* game);
 static void stopAtWall(Game* game);
 static void stopAtSelf(Game* game);
 static void animatePellet(Game* game);
 static void UpdateGame(Game* game);
-static void renderGame(Game* game, int32_t cx, int32_t cy);
+static void renderGame(Game* game);
 static void GameLoop(Game* game);
 static void GameDestroy(Game* game);
 static void prepareGame(Game *game);
@@ -30,10 +30,10 @@ static void resetGame(Game* game);
 static void startGame(Game* game);
 static void manageSound(Game* game);
 static void debugStat(HDC hdc, Game* game);
-static void animateButton(HWND hwnd, const RECT* rect, const SPRITE* sprite, Frame* frame);
+static void animateButton(Game* game, const RECT* rect, const SPRITE* sprite, Frame* frame);
 static void processGameOverClick(Game *game, const RECT* rect, bool isRestarting);
 static void processInput(Game *game);
-static void handleGameOverButtonAnimation(HWND hwnd);
+static void handleGameOverButtonAnimation(Game* game);
 static void redirectMenu(Game* game);
 
 // --- PUBLIC API IMPLEMENTATIONS ---
@@ -47,6 +47,7 @@ Game* InitializeGame()
         FatalAllocError(L"Memory Allocation for game failed.");
         exit(EXIT_FAILURE);
     }
+    ZeroMemory(game, sizeof(Game));
 
     game->window = (Window*)malloc(sizeof(Window));
     if(!game->window)
@@ -55,11 +56,14 @@ Game* InitializeGame()
         GameDestroy(game);
         exit(EXIT_FAILURE);
     }
+    ZeroMemory(game->window, sizeof(Window));
     game->window->gameProc = GameWindowProc;
-
+    
     game->isRunning = true;
-    game->state = MENU;
     game->isMuted = false;
+    game->starting = false;
+    game->isRestarting= false;
+    game->state = MENU;
     game->createWindow = CreateGameWindow;
     game->destroy = GameDestroy;
     game->update = GameLoop;
@@ -77,6 +81,7 @@ Game* InitializeGame()
     }
     game->snake = NULL;
     game->pellet = NULL;
+    game->input = (Input){0};
     
     return game;
 }
@@ -213,19 +218,19 @@ static void updateSnakePosition(Game* game)
 }
 
 
-static void changeDirection(DIRECTIONS *currentDirection, const GAMESTATE gameState)
+static void changeDirection(Game* game)
 {
-    if (gameState != PLAYING) return;
+    if (game->state != PLAYING) return;
+    DIRECTIONS *snakeDir = &game->snake->direction;
 
-    DIRECTIONS newDirection = *currentDirection;
-    if (GetAsyncKeyState(VK_LEFT) & 0x8000) newDirection = LEFT;
-    else if (GetAsyncKeyState(VK_RIGHT) & 0x8000) newDirection = RIGHT;
-    else if (GetAsyncKeyState(VK_UP) & 0x8000) newDirection = UP;
-    else if (GetAsyncKeyState(VK_DOWN) & 0x8000) newDirection = DOWN;
+    DIRECTIONS newDirection = *snakeDir;
+    if (game->input.keyBoard[ARROW_LEFT].pressed) newDirection = LEFT;
+    else if (game->input.keyBoard[ARROW_RIGHT].pressed) newDirection = RIGHT;
+    else if (game->input.keyBoard[ARROW_UP].pressed) newDirection = UP;
+    else if (game->input.keyBoard[ARROW_DOWN].pressed) newDirection = DOWN;
 
-
-    if (getReversedDirection(*currentDirection) != newDirection) {
-        *currentDirection = newDirection;
+    if (getReversedDirection(*snakeDir) != newDirection) {
+        *snakeDir = newDirection;
     }
 }
 
@@ -262,19 +267,25 @@ static float interpolateScale(float start, float end, float t) {
 
 static void UpdateGame(Game *game)
 {
+    if(game->state != MENU)
+        manageSound(game);
+
+    if(game->state == GAMEOVER)
+        handleGameOverButtonAnimation(game);
+
     if(game->state != PLAYING) return;
 
     updateSnakePosition(game);
     eatPellet(game);
     animatePellet(game);
-    manageSound(game);
 }
 
-static void renderGame(Game* game, int32_t cx, int32_t cy)
+static void renderGame(Game* game)
 {
-    renderToBackBuffer(game->window->handle, &game->state, game->buffer->backBuffer, game->pellet, game->snake);
+    Vector2 size = {.x=game->window->width, .y=game->window->height};
+    renderToBackBuffer(game, size);
     if(debugMode)debugStat(game->buffer->backBuffer, game);
-    copyToFrontBuffer(game->buffer->backBuffer, game->window->hdc, cx, cy);
+    copyToFrontBuffer(game, size);
 }
 
 static void GameLoop(Game* game)
@@ -302,22 +313,22 @@ static void GameLoop(Game* game)
         {
             lastFrameTime = currentTime;
 
-            if (GetAsyncKeyState(VK_ESCAPE) & 0x8000)
+            if (game->input.keyBoard[ESCAPE].pressed)
             {
                 PostMessage(game->window->handle, WM_CLOSE, 0, 0);
             }
 
-            if (GetAsyncKeyState(VK_F3) & 0x8000)
+            if (game->input.keyBoard[KEY_F3].pressed)
             {
                 debugMode = !debugMode;
             }
             processInput(game);
             UpdateGame(game);
-            game->render(game, screen_width, screen_height);
+            game->render(game);
             startGame(game);
-            handleGameOverButtonAnimation(game->window->handle);
 
             Sleep(1);
+            setInputStateAfter();
         }
     }
 }
@@ -377,12 +388,12 @@ static void resetGame(Game *game)
 static void startGame(Game *game)
 {
     // Transition from MENU to WAIT_MOVE_INPUT if start was clicked
-    if((game->state == MENU && startClicked) || (game->state == GAMEOVER && restartClicked))
+    if((game->state == MENU && game->starting) || (game->state == GAMEOVER && game->isRestarting))
     {
         resetGame(game);
         prepareGame(game);
-        if(startClicked) startClicked = false;
-        if(restartClicked) restartClicked = false;
+        if(game->starting) game->starting = false;
+        if(game->isRestarting) game->isRestarting = false;
         game->state = WAIT_MOVE_INPUT;
         SetupSprite(&game->pellet->sprite, "resources/assets/sprites/apple.bmp", (const Frame){.totalRows=1, .totalCols=1});
         SetupSprite(&game->snake->headSprite, "resources/assets/sprites/snakehead.bmp", (const Frame){.totalRows=4, .totalCols=2});
@@ -393,12 +404,13 @@ static void startGame(Game *game)
     if(game && game->state == WAIT_MOVE_INPUT)
     {
         if(
-            (GetAsyncKeyState(VK_UP) & 0x8000)   ||
-            (GetAsyncKeyState(VK_DOWN) & 0x8000) || 
-            (GetAsyncKeyState(VK_LEFT) & 0x8000) ||
-            (GetAsyncKeyState(VK_RIGHT) & 0x8000))
+            (game->input.keyBoard[ARROW_LEFT].pressed)  ||
+            (game->input.keyBoard[ARROW_RIGHT].pressed) || 
+            (game->input.keyBoard[ARROW_UP].pressed)    ||
+            (game->input.keyBoard[ARROW_DOWN].pressed))
             {
                 game->state = PLAYING;
+                changeDirection(game);
             }
     }
 }
@@ -413,23 +425,22 @@ static void processGameOverClick(Game *game, const RECT* rect, bool isRestarting
     ScreenToClient(game->window->handle, &mouse);
     if(isPointInRect(rect, mouse.x, mouse.y))
     {
-        if(hasClicked)
+        if(game->input.mouse[MOUSE_LEFT].released)
         {
             if(isRestarting) {
-                restartClicked = true;
+                game->isRestarting = true;
             }
             else
             {
                 redirectMenu(game);
             }
-            hasClicked = false;
         }
     }
 }
 
 static void processInput(Game* game) {
     bool isRestarting = true;
-    changeDirection(&game->snake->direction, game->state);
+    changeDirection(game);
     processGameOverClick(game, &restartRect, isRestarting);
     processGameOverClick(game, &homeRect, !isRestarting);
 }
@@ -471,12 +482,11 @@ static void manageSound(Game* game)
     POINT mouse;
     GetCursorPos(&mouse);
     ScreenToClient(game->window->handle, &mouse);
-    if(hasClicked)
+    if(game->input.mouse[MOUSE_LEFT].pressed)
     {
         if(isPointInRect(&audioRect, mouse.x, mouse.y))
         {
             game->isMuted = !game->isMuted;
-            hasClicked = false;
         }
     }
     if(game->isMuted)
@@ -485,8 +495,8 @@ static void manageSound(Game* game)
         playGameSound(&game->state, &sound, game->isMuted);
 }
 
-static void animateButton(HWND hwnd, const RECT* rect, const SPRITE* sprite, Frame* frame) {
-    if(!hwnd) return;
+static void animateButton(Game* game, const RECT* rect, const SPRITE* sprite, Frame* frame) {
+    if(!game->window->handle) return;
     if(!sprite || !frame) return;
 
     static const int DEFAULT_INDEX = 0;
@@ -494,13 +504,13 @@ static void animateButton(HWND hwnd, const RECT* rect, const SPRITE* sprite, Fra
     static const int CLICKED_INDEX = 2;
     POINT mouse;
     GetCursorPos(&mouse);
-    ScreenToClient(hwnd, &mouse);
-    if(!hasPressed && isPointInRect(rect, mouse.x, mouse.y)) {
-        setFrameCol(sprite, frame, HOVERED_INDEX);
-    }
-    else if (hasPressed && isPointInRect(rect, mouse.x, mouse.y)) 
+    ScreenToClient(game->window->handle, &mouse);
+    if (isPointInRect(rect, mouse.x, mouse.y) && game->input.mouse[MOUSE_LEFT].held) 
     {
         setFrameCol(sprite, frame, CLICKED_INDEX);
+    }
+    else if(isPointInRect(rect, mouse.x, mouse.y) && !game->input.mouse[MOUSE_LEFT].held) {
+        setFrameCol(sprite, frame, HOVERED_INDEX);
     }
     else 
     {
@@ -508,9 +518,9 @@ static void animateButton(HWND hwnd, const RECT* rect, const SPRITE* sprite, Fra
     }
 }
 
-static void handleGameOverButtonAnimation(HWND hwnd) {
-    animateButton(hwnd, &restartRect, &restart_sprite, &frames[RESTART]);
-    animateButton(hwnd, &homeRect, &home_sprite, &frames[HOME]);
+static void handleGameOverButtonAnimation(Game* game) {
+    animateButton(game, &restartRect, &restart_sprite, &frames[RESTART]);
+    animateButton(game, &homeRect, &home_sprite, &frames[HOME]);
 }
 
 static void redirectMenu(Game* game) {
@@ -539,12 +549,14 @@ static void debugStat(HDC hdc, Game* game)
     sprintf(buffer, "GameState = %s", state);
     TextOut(hdc, ((x - scale_x) + 2)* TILE_SIZE, (center_y - scale_y) * TILE_SIZE, "Debug : ", 9);
     TextOut(hdc, (x - scale_x) * TILE_SIZE, ((center_y - scale_y) + 1) * TILE_SIZE, buffer, lstrlen(buffer));
-    sprintf(buffer, "hasClicked = %s", hasClicked ? "true":"false");
+    sprintf(buffer, "hasClicked = %s", game->input.mouse[MOUSE_LEFT].pressed ? "true":"false");
     TextOut(hdc, (x - scale_x) * TILE_SIZE, ((center_y - scale_y) + 2) * TILE_SIZE, buffer, lstrlen(buffer));
-    sprintf(buffer, "restartClicked = %s", restartClicked ? "true":"false");
+    sprintf(buffer, "restartClicked = %s", game->isRestarting ? "true":"false");
     TextOut(hdc, (x - scale_x) * TILE_SIZE, ((center_y - scale_y) + 3) * TILE_SIZE, buffer, lstrlen(buffer));
-    sprintf(buffer, "isMuted = %s", game->isMuted ? "true":"false");
+    sprintf(buffer, "game starting = %s", game->starting ? "true":"false");
     TextOut(hdc, (x - scale_x) * TILE_SIZE, ((center_y - scale_y) + 4) * TILE_SIZE, buffer, lstrlen(buffer));
+    sprintf(buffer, "isMuted = %s", game->isMuted ? "true":"false");
+    TextOut(hdc, (x - scale_x) * TILE_SIZE, ((center_y - scale_y) + 5) * TILE_SIZE, buffer, lstrlen(buffer));
 
     SelectObject(hdc, oldFont);
     DeleteFont(&hFont);

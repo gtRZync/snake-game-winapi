@@ -1,8 +1,19 @@
 #include "menu.h"
+#define LIMITED_GAME
+#define LIMITED_WINDOW
+#include "game.h"
 
-bool hasClicked = false, startClicked = false, restartClicked = false, hasPressed = false;
+static int32_t FetchTextCenteredWidth(HDC hdc, int w, LPCWSTR lpString)
+{
+    SIZE buffer;
+    if(GetTextExtentPoint32W(hdc, lpString,lstrlenW(lpString), &buffer))
+    {
+        return (w - buffer.cx) / 2;
+    }
+    return - 1;
+}
 
-static void addGlowing(HDC hdc, const MenuStyle* style, COLORREF font_color, LPCWSTR text, int32_t y, int32_t x_offset, int32_t y_offset)
+static void addGlowing(HDC hdc, const MenuStyle* style, COLORREF font_color, LPCWSTR text, int32_t y, int32_t x_offset, int32_t y_offset, int win_width)
 {
     HFONT font;
     int32_t x;
@@ -17,17 +28,16 @@ static void addGlowing(HDC hdc, const MenuStyle* style, COLORREF font_color, LPC
     size_t size = sizeof(offset) / sizeof(offset[0]);
     for(uint8_t i = 0 ; i < size; i++)
     {
-        FetchTextCenteredMetrics(hdc, &x, NULL, text);
+        x = FetchTextCenteredWidth(hdc, win_width, text);
         TextOutW(hdc, x + offset[i][0], y + offset[i][1], text, lstrlenW(text));
     }
     SelectObject(hdc, oldFont);
     DeleteFont(&font);
 }
 
-static void DrawCenteredTextForMenu(HDC hdc, LPCWSTR lpString, int starting_y)
+static void DrawCenteredTextForMenu(HDC hdc, LPCWSTR lpString, int starting_y, int win_width)
 {
-    int32_t ctrwString;
-    FetchTextCenteredMetrics(hdc, &ctrwString, NULL, lpString);
+    int32_t ctrwString = FetchTextCenteredWidth(hdc, win_width, lpString);
     TextOutW(hdc,
         ctrwString,
         starting_y, 
@@ -36,54 +46,56 @@ static void DrawCenteredTextForMenu(HDC hdc, LPCWSTR lpString, int starting_y)
     );
 }
 
-static void handleClick(HWND hwnd, const RECT *rect, uint8_t id, const POINT* mouse)
+static void handleClick(Game* game, const RECT *rect, uint8_t id, const POINT* mouse)
 {
+    static const int START_ID = 0, OPTION_ID = 1, EXIT_ID = 2;
     if(isPointInRect(rect, mouse->x, mouse->y))
     {
         switch(id)
         {
-            case 0:
-                startClicked = true;
+            case START_ID:
+                game->starting = true;
                 break;
 
-            case 1:
+            case OPTION_ID:
                 MessageBoxW(NULL, L"Options Menu", L"Options", MB_OK | MB_ICONINFORMATION);
                 break;
 
-            case 2:
-                PostMessage(hwnd, WM_CLOSE, 0, 0);
+            case EXIT_ID:
+                PostMessage(game->window->handle, WM_CLOSE, 0, 0);
                 break;
         }
     }
 }
 
 
-
-void drawMenu(HWND hwnd, HDC hdc, uint32_t topPart, MenuOptions* options, uint8_t n_options, COLORREF rectBrushColor, const MenuStyle* style)
+void drawMenu(Game* game, Vector2 size, uint32_t topPart, MenuOptions *options, uint8_t n_options, const MenuStyle *style)
 {
+    HDC memDC = game->buffer->backBuffer;
     int maxTextWidth = 0;
     int totalHeight = n_options * style->spacing;
-    int startY = (screen_height - (totalHeight - topPart)) / 2;
+    int startY = (size.y - (totalHeight - topPart)) / 2;
+    COLORREF rectBrushColor = golden_brown;
 
     HFONT font;
     HBRUSH brush = CreateSolidBrush(rectBrushColor); 
-    HGDIOBJ oldBrush = (HBRUSH)SelectObject(hdc, brush);
+    HGDIOBJ oldBrush = (HBRUSH)SelectObject(memDC, brush);
 
     for (int i = 0; i < n_options; i++) {
-        int w = FetchTextXW(hdc, options[i].text);
+        int w = FetchTextXW(memDC, options[i].text);
         if (w > maxTextWidth) maxTextWidth = w;
     }
-    int startX = (screen_width - maxTextWidth) / 2;
+    int startX = (size.x - maxTextWidth) / 2;
 
     POINT mouse;
     GetCursorPos(&mouse);
-    ScreenToClient(hwnd, &mouse);
+    ScreenToClient(game->window->handle, &mouse);
 
     RECT rect[n_options];
 
     for (int i = 0; i < n_options; i++) {
         int y = startY + (i * style->spacing);
-        int hText = FetchTextYW(hdc, options[i].text);
+        int hText = FetchTextYW(memDC, options[i].text);
 
         rect[i] = (RECT){
             startX - style->padding_x,
@@ -92,31 +104,32 @@ void drawMenu(HWND hwnd, HDC hdc, uint32_t topPart, MenuOptions* options, uint8_
             y + hText + style->padding_y
         };
         // Hover effect
-        BOOL isHovered = PtInRect(&rect[i], mouse);
+        BOOL isHovered = isPointInRect(&rect[i], mouse.x, mouse.y);
         COLORREF borderColor = isHovered ? RGB(0, 255, 0) : RGB(17 ,61 ,62); 
 
         HPEN pen = CreatePen(PS_SOLID, 4, borderColor);
-        HGDIOBJ oldPen = (HPEN)SelectObject(hdc, pen);
+        HGDIOBJ oldPen = (HPEN)SelectObject(memDC, pen);
 
         COLORREF offsetColor = isHovered ? style->glow_color : RGB(0, 0, 0);
 
         // Draw box and text
-        RoundRect(hdc, rect[i].left, rect[i].top, rect[i].right, rect[i].bottom, 60, 60);
-        addGlowing(hdc, style, offsetColor, options[i].text, y, 3, 3);
-        HFONT oldFont = CreateAndSelectFont(hdc, &font, -style->font_size, style->font_name, style->font_color);
-        DrawCenteredTextForMenu(hdc, options[i].text, y);
-        SelectObject(hdc, oldPen);
+        uint8_t offset = 3;
+        uint8_t corner = 60;
+        RoundRect(memDC, rect[i].left, rect[i].top, rect[i].right, rect[i].bottom, corner, corner);
+        addGlowing(memDC, style, offsetColor, options[i].text, y, offset, offset, size.x);
+        HFONT oldFont = CreateAndSelectFont(memDC, &font, -style->font_size, style->font_name, style->font_color);
+        DrawCenteredTextForMenu(memDC, options[i].text, y, size.x);
+        SelectObject(memDC, oldPen);
         DeleteObject(pen);
-        SelectObject(hdc, oldFont);
+        SelectObject(memDC, oldFont);
         DeleteFont(&font);
     }
     
-    if (hasClicked) {
+    if (game->input.mouse[MOUSE_LEFT].released) {
         for (int i = 0; i < n_options; i++) {
-            handleClick(hwnd, &rect[i], i, &mouse);
+            handleClick(game, &rect[i], i, &mouse);
         }
-        hasClicked = false;
     }
-    SelectObject(hdc, oldBrush);
+    SelectObject(memDC, oldBrush);
     DeleteObject(brush);
 }

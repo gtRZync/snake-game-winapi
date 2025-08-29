@@ -1,16 +1,20 @@
 #include "render.h"
+#include "menu.h"
+#define LIMITED_GAME
+#define LIMITED_WINDOW
+#include "game.h"
 
 // STATIC INTERNALS – private to render.c
-static void renderMenu(HWND hwnd, HDC hdc, const GAMESTATE* gameState);
+static void renderMenu(Game* game, Vector2 size);
 static void renderGrid(HDC hdc);
 static void renderHeader(HDC hdc, SPRITE* sprite);
 static void drawSnake(HDC hdc, Snake* snake);
 static void drawPellet(HDC hdc, Pellet* pellet);
-static void renderOnGameOver(HDC hdc, Snake* snake, Pellet* pellet, GAMESTATE* gameState);
+static void renderOnGameOver(HDC hdc, Snake* snake, Pellet* pellet, const GAMESTATE gameState);
 static void renderSprite(HDC hdc, SPRITE* sprite, uint32_t cx, uint32_t cy, float scale, const Frame frame, UINT transparentColorKey);
 static void setupRectAndRenderSprite(HDC hdc, SPRITE *sprite, uint32_t posX, uint32_t posY, float scale, const Frame frame, UINT transparentColorKey, RECT* outRect, int8_t inflateX, int8_t inflateY);
-static void renderControlKeysOverlay(HDC hdc, SPRITE* sprite, GAMESTATE* gameState);
-static int32_t renderTitle(HDC hdc, SPRITE *sprite, float scaleFactor);
+static void renderControlKeysOverlay(HDC hdc, Vector2 size, SPRITE* sprite, const GAMESTATE gameState);
+static int32_t renderTitle(HDC hdc, Vector2 size, SPRITE *sprite, float scaleFactor);
 static void renderSoundIcon(HDC hdc, SPRITE *sprite, float scaleFactor);
 static Frame getCornerFrame(DIRECTIONS fromDir, DIRECTIONS toDir);
 static void test(HDC hdc, const RECT* lprect);
@@ -21,7 +25,6 @@ static void renderScoreValue(HDC hdc, int value, int posX, int posY, int spriteW
 static void renderButtonsText(HDC hdc, int center_x, int center_y, int homeW, int restartW, int font_size);
 static void renderScores(HDC hdc, int center_x, int center_y, int trophyW, int pelletW);
 
-int32_t screen_height, screen_width;
 int32_t score = 0;
 int32_t high_score = 0;
 SPRITE title;
@@ -60,27 +63,32 @@ Frame frames[NUM_INDEXES] = {
 };
 
 // --- PUBLIC API IMPLEMENTATIONS ---
-void renderToBackBuffer(HWND hwnd, GAMESTATE* gameState, HDC back_buffer, Pellet* pellet, Snake* snake)
+void renderToBackBuffer(Game* game, Vector2 size)
 {
-    RECT screen = {0, 0, screen_width, screen_height};
+    HDC memDC = game->buffer->backBuffer;
+
+    RECT screen = {0, 0, size.x, size.y};
     HBRUSH hBrush =  CreateSolidBrush(MENU_BG);
-    FillRect(back_buffer, &screen, hBrush);
+    FillRect(memDC, &screen, hBrush);
     DeleteObject(hBrush);
-    renderMenu(hwnd, back_buffer, gameState);
-    if(*gameState != MENU)
+    renderMenu(game, size);
+    if(game->state != MENU)
     {
-        renderGrid(back_buffer);
-        drawPellet(back_buffer, pellet);
-        drawSnake(back_buffer, snake);
-        renderHeader(back_buffer, &pellet->sprite);
-        renderOnGameOver(back_buffer, snake, pellet,gameState);
-        renderControlKeysOverlay(back_buffer, &keys, gameState);
+        renderGrid(memDC);
+        drawPellet(memDC, game->pellet);
+        drawSnake(memDC, game->snake);
+        renderHeader(memDC, &game->pellet->sprite);
+        renderOnGameOver(memDC, game->snake, game->pellet, game->state);
+        renderControlKeysOverlay(memDC, size, &keys, game->state);
     }
 }
 
-void copyToFrontBuffer(HDC back_buffer, HDC front_buffer, int32_t cx, int32_t cy)
+void copyToFrontBuffer(Game* game, Vector2 size)
 {
-    BitBlt(front_buffer, 0, 0, cx, cy, back_buffer, 0, 0, SRCCOPY);
+    HDC memDC = game->buffer->backBuffer;
+    HDC winDC = game->window->hdc;
+
+    BitBlt(winDC, 0, 0, size.x, size.y, memDC, 0, 0, SRCCOPY);
 }
 
 void renderTransparentLayer(HDC hdc, BOOL is_rounded, RECT* rect)
@@ -241,18 +249,17 @@ static void drawPellet(HDC hdc, Pellet* pellet)
     int drawY = centerY - scaledH / 2;
 
     renderSprite(hdc, &pellet->sprite, drawX, drawY, pellet->scale,(Frame){.row=0, .col=0}, turquoise);
-}
+} 
 
-
-static void renderMenu(HWND hwnd, HDC hdc, const GAMESTATE* gameState)
+static void renderMenu(Game* game, Vector2 size)
 {
-    if(*gameState == MENU)
+    HDC memDC = game->buffer->backBuffer;
+    if(game->state == MENU)
     {
-        int32_t topPart = renderTitle(hdc, &title, 1.2f);
-        COLORREF brushColor = golden_brown;
-        HFONT oldFont = CreateAndSelectFont(hdc, &style.hFont, -style.font_size, style.font_name, style.font_color);
-        drawMenu(hwnd, hdc, topPart, mainMenu, style.length, brushColor, &style);
-        SelectObject(hdc, oldFont);
+        int32_t topPart = renderTitle(memDC, size, &title, 1.2f);
+        HFONT oldFont = CreateAndSelectFont(memDC, &style.hFont, -style.font_size, style.font_name, style.font_color);
+        drawMenu(game , size, topPart, mainMenu, style.length, &style);
+        SelectObject(memDC, oldFont);
         DeleteFont(&style.hFont);
     }
 }
@@ -326,8 +333,8 @@ static void renderHeader(HDC hdc, SPRITE* sprite)
     DeleteFont(&hFont);
 }
 
-static void renderOnGameOver(HDC hdc, Snake *snake, Pellet* pellet, GAMESTATE* gameState) {
-    if (*gameState != GAMEOVER || snake->isMoving) return;
+static void renderOnGameOver(HDC hdc, Snake *snake, Pellet* pellet, const GAMESTATE gameState) {
+    if (gameState != GAMEOVER || snake->isMoving) return;
 
     const float scale = 5.6f;
     const float buttonScale = scale - 1;
@@ -423,9 +430,9 @@ static void setupRectAndRenderSprite(HDC hdc, SPRITE *sprite, uint32_t posX, uin
     }
 }
 
-static void renderControlKeysOverlay(HDC hdc, SPRITE* sprite, GAMESTATE* gameState)
+static void renderControlKeysOverlay(HDC hdc, Vector2 size, SPRITE* sprite, const GAMESTATE gameState)
 {
-    if(*gameState == WAIT_MOVE_INPUT && sprite)
+    if(gameState == WAIT_MOVE_INPUT && sprite)
     {    
         int32_t center_x, center_y;
         center_x = GRID_WIDTH / 2;
@@ -433,21 +440,21 @@ static void renderControlKeysOverlay(HDC hdc, SPRITE* sprite, GAMESTATE* gameSta
 
         RECT rect = SCALE_RECT(center_x, center_y, 6, 4);
 
-        int32_t cx = (screen_width - (sprite->width)) / 2;
-        int32_t cy = (screen_height - sprite->height) / 2;
+        int32_t cx = (size.x - (sprite->width)) / 2;
+        int32_t cy = (size.y - sprite->height) / 2;
 
         renderTransparentLayer(hdc, true, &rect);
         renderSprite(hdc, sprite, cx, cy + 50, 1.f,(Frame){.row=0, .col=0}, black);
     }
 }
 
-static int32_t renderTitle(HDC hdc, SPRITE *sprite, float scaleFactor)
+static int32_t renderTitle(HDC hdc, Vector2 size, SPRITE *sprite, float scaleFactor)
 {
     if(sprite)
     {
-        uint32_t titleX = (screen_width - (sprite->width * scaleFactor)) / 2;
+        uint32_t titleX = (size.x - (sprite->width * scaleFactor)) / 2;
 
-        uint32_t titleY = (screen_height - (sprite->height * scaleFactor)) / 20;
+        uint32_t titleY = (size.y - (sprite->height * scaleFactor)) / 20;
 
         renderSprite(hdc, sprite, titleX , titleY, scaleFactor,(Frame){.row=0, .col=0}, black);
 

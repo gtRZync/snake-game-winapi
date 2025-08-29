@@ -2,7 +2,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
-typedef struct tagDoubleBuffer
+typedef struct DOUBLE_BUFFER
 {
     HBITMAP screen;
     HDC backBuffer;

@@ -3,6 +3,7 @@
 #include <windows.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdbool.h>
 
 //TODO: Refactor To decouple currentRow and Frame
 typedef struct tagSprites

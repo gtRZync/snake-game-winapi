@@ -10,7 +10,7 @@ typedef struct SnakeNode
     Frame frame;
 } SnakeNode;
 
-typedef struct tagSnake
+typedef struct Snake
 {
     int32_t cx;
     int32_t cy;

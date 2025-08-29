@@ -3,6 +3,8 @@
 #include "utilis.h"
 #include "font.h"
 
+struct Game;
+
 typedef struct tagStyle
 {
     UINT font_size;
@@ -21,6 +23,6 @@ typedef struct tagMenu
     const wchar_t* text;
 }MenuOptions;
 
-void drawMenu(HWND hwnd, HDC hdc, uint32_t topPart, MenuOptions* options, uint8_t n_options, COLORREF rectBrushColor, const MenuStyle* styles);
+void drawMenu(struct Game* game, Vector2 size, uint32_t topPart, MenuOptions *options, uint8_t n_options, const MenuStyle *style);
 
 

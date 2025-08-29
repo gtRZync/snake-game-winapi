@@ -58,19 +58,47 @@ typedef enum tagGameStates
     GAMEOVER
 }GAMESTATE;
 
-typedef struct Input 
+typedef enum MouseButton {
+    MOUSE_LEFT,
+    MOUSE_RIGHT,
+    MOUSE_BUTTON_COUNT
+} MouseButton;
+
+typedef enum KeyCode {
+    ARROW_UP,
+    ARROW_DOWN,
+    ARROW_LEFT,
+    ARROW_RIGHT,
+    ESCAPE,
+    KEY_F3,
+    KEY_Z,
+    KEY_Q,
+    KEY_S,
+    KEY_D,
+    KEY_COUNT
+} KeyCode;
+typedef struct Button
 {
-    bool restart;
-    bool start;
+    bool held;
+    bool pressed;
+    bool released;
+}Button;
+
+typedef struct Input {
+    Button keyBoard[KEY_COUNT];
+    Button mouse[MOUSE_BUTTON_COUNT];
+    bool focused;
 }Input;
+
+typedef struct Vector2 {
+    int x, y;
+}Vector2;
 
 typedef enum INDEXES {SOUND, RESTART, HOME, NUM_INDEXES}INDEXES;
 
 extern Frame frames[NUM_INDEXES];
-extern int32_t screen_height, screen_width;
 extern int32_t score, high_score;
 extern int32_t _exitCode;
-extern bool hasClicked, hasPressed, startClicked, restartClicked;
 extern RECT audioRect;
 extern RECT restartRect;
 extern RECT homeRect;

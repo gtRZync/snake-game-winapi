@@ -17,11 +17,18 @@ void SetupSprite(SPRITE* sprite, LPCSTR filepath, const Frame dimensions)
     }
     sprite->width = sprite->sheetInfo.bmWidth / sprite->totalCols;
     sprite->height = sprite->sheetInfo.bmHeight / sprite->totalRows;
-    if(sprite->width <= 0 ||sprite->height <= 0)
+    bool hasError = false;
+    if(sprite->width <= 0)
     {
-        ShowLastErrorMessage("sprite->width/height");
-        return;
+        ShowLastErrorMessage("sprite->width");
+        hasError = true;
     }
+    else if(sprite->height <= 0)
+    {
+        ShowLastErrorMessage("sprite->height");
+        hasError = true;
+    }
+    if (hasError) return;
 }
 
 void setFrameRow(const SPRITE* sprite, Frame* frame, uint8_t rowIndex)

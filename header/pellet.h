@@ -2,7 +2,7 @@
 
 #include "utilis.h"
 
-typedef struct tagPellet
+typedef struct Pellet
 {
     int32_t cx;
     int32_t cy;

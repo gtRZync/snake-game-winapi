@@ -1,5 +1,5 @@
 .vscode/
-free_logs/*.txt
+free_logs/
 bin/*.exe
 obj/*
 features/

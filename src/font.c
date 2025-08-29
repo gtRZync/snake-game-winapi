@@ -45,31 +45,6 @@ WINBOOL DeleteFont(HFONT *hFont)
     return false;
 }
 
-void FetchTextCenteredMetrics(HDC hdc, int* cx, int* cy, LPCWSTR lpString)
-{
-    SIZE buffer;
-    if(GetTextExtentPoint32W(hdc, lpString,lstrlenW(lpString), &buffer))
-    {
-        if(cx)
-            *cx = (screen_width - buffer.cx) / 2;
-        if(cy)
-            *cy = (screen_height - buffer.cy) / 2;
-    }
-}
-
-
-void FetchTextCenteredMetricsA(HDC hdc, int* cx, int* cy, LPCTSTR lpString)
-{
-    SIZE buffer;
-    if(GetTextExtentPoint32(hdc, lpString,lstrlen(lpString), &buffer))
-    {
-        if(cx)
-            *cx = (screen_width - buffer.cx) / 2;
-        if(cy)
-            *cy = (screen_height - buffer.cy) / 2;
-    }
-}
-
 int FetchTextY(HDC hdc, LPCTSTR lpString)
 {
     SIZE buffer;
