@@ -58,12 +58,6 @@ typedef enum tagGameStates
     GAMEOVER
 }GAMESTATE;
 
-typedef enum MouseButton {
-    MOUSE_LEFT,
-    MOUSE_RIGHT,
-    MOUSE_BUTTON_COUNT
-} MouseButton;
-
 typedef enum KeyCode {
     ARROW_UP,
     ARROW_DOWN,
@@ -84,15 +78,23 @@ typedef struct Button
     bool released;
 }Button;
 
-typedef struct Input {
-    Button keyBoard[KEY_COUNT];
-    Button mouse[MOUSE_BUTTON_COUNT];
-    bool focused;
-}Input;
-
 typedef struct Vector2 {
     int x, y;
 }Vector2;
+
+typedef struct Mouse
+{
+    Button left;
+    Button right;
+    Vector2 pos;
+}Mouse;
+
+typedef struct InputManager {
+    Button keyBoard[KEY_COUNT];
+    Mouse mouse;
+    bool focused;
+}InputManager;
+
 
 typedef enum INDEXES {SOUND, RESTART, HOME, NUM_INDEXES}INDEXES;
 

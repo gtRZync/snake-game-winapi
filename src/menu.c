@@ -46,24 +46,27 @@ static void DrawCenteredTextForMenu(HDC hdc, LPCWSTR lpString, int starting_y, i
     );
 }
 
-static void handleClick(Game* game, const RECT *rect, uint8_t id, const POINT* mouse)
+static void handleClick(Game* game, const RECT *rect, uint8_t id)
 {
     static const int START_ID = 0, OPTION_ID = 1, EXIT_ID = 2;
-    if(isPointInRect(rect, mouse->x, mouse->y))
+    Mouse* mouse = &game->inputManager.mouse;
+    if(isPointInRect(rect, mouse->pos.x, mouse->pos.y))
     {
-        switch(id)
-        {
-            case START_ID:
-                game->starting = true;
-                break;
-
-            case OPTION_ID:
-                MessageBoxW(NULL, L"Options Menu", L"Options", MB_OK | MB_ICONINFORMATION);
-                break;
-
-            case EXIT_ID:
-                PostMessage(game->window->handle, WM_CLOSE, 0, 0);
-                break;
+        if(mouse->left.released) {
+            switch(id)
+            {
+                case START_ID:
+                    game->starting = true;
+                    break;
+    
+                case OPTION_ID:
+                    MessageBoxW(NULL, L"Options Menu", L"Options", MB_OK | MB_ICONINFORMATION);
+                    break;
+    
+                case EXIT_ID:
+                    PostMessage(game->window->handle, WM_CLOSE, 0, 0);
+                    break;
+            }
         }
     }
 }
@@ -87,9 +90,7 @@ void drawMenu(Game* game, Vector2 size, uint32_t topPart, MenuOptions *options, 
     }
     int startX = (size.x - maxTextWidth) / 2;
 
-    POINT mouse;
-    GetCursorPos(&mouse);
-    ScreenToClient(game->window->handle, &mouse);
+    Vector2 *mouse = &game->inputManager.mouse.pos;
 
     RECT rect[n_options];
 
@@ -104,7 +105,7 @@ void drawMenu(Game* game, Vector2 size, uint32_t topPart, MenuOptions *options, 
             y + hText + style->padding_y
         };
         // Hover effect
-        BOOL isHovered = isPointInRect(&rect[i], mouse.x, mouse.y);
+        BOOL isHovered = isPointInRect(&rect[i], mouse->x, mouse->y);
         COLORREF borderColor = isHovered ? RGB(0, 255, 0) : RGB(17 ,61 ,62); 
 
         HPEN pen = CreatePen(PS_SOLID, 4, borderColor);
@@ -125,10 +126,8 @@ void drawMenu(Game* game, Vector2 size, uint32_t topPart, MenuOptions *options, 
         DeleteFont(&font);
     }
     
-    if (game->input.mouse[MOUSE_LEFT].released) {
-        for (int i = 0; i < n_options; i++) {
-            handleClick(game, &rect[i], i, &mouse);
-        }
+    for (int i = 0; i < n_options; i++) {
+        handleClick(game, &rect[i], i);
     }
     SelectObject(memDC, oldBrush);
     DeleteObject(brush);

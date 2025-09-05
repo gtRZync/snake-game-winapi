@@ -4,7 +4,7 @@ GameEntryPoint()
 {
     Game* game = InitializeGame();
 
-    setInputContext(&game->input);
+    setInputContext(&game->inputManager);
 
     game->createWindow(game, hInstance, SW_SHOW);
     

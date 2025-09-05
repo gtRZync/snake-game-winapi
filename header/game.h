@@ -9,7 +9,7 @@ typedef struct Game
 {
     GAMESTATE state;
     Window* window;
-    Input input;
+    InputManager inputManager;
     Snake* snake;
     Pellet* pellet;
     DOUBLE_BUFFER* buffer;

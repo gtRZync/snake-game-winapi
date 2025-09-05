@@ -35,5 +35,5 @@ INT APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 LRESULT CALLBACK GameWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 void CreateGameWindow(struct Game* game, HINSTANCE hInstance, int nShowCmd);
 void setInputStateAfter();
-void setInputContext(Input *ctx);
+void setInputContext(InputManager *ctx);
 #endif

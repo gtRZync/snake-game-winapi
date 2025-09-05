@@ -2,14 +2,15 @@
 #include "../resources/resources.h"
 #include "sprite.h"
 #include "game.h"
+#include <windowsx.h>
 
-Input* self = NULL;
+InputManager* self = NULL;
 static const int buttonValues[KEY_COUNT];
 
 static void handleInputCtxErr(Game* game) {
     if (!self) {
-        const wchar_t* errCaption = L"Input Context Not Set";
-        const wchar_t* errMsg = L"Input context is null. Call 'setInputContext(Input *ctx)' in main.c immediately after initializing the game, before recompiling.";
+        const wchar_t* errCaption = L"InputManager Context Not Set";
+        const wchar_t* errMsg = L"InputManager context is null. Call 'setInputContext(InputManager *ctx)' in main.c immediately after initializing the game, before recompiling.";
         MessageBoxW(NULL, errMsg, errCaption, MB_OK | MB_ICONERROR);
         game->destroy(game);
         exit(ERROR_SUCCESS);
@@ -48,7 +49,7 @@ void CreateGameWindow(Game* game, HINSTANCE hInstance, int nShowCmd)
         NULL,
         NULL,
         hInstance,
-        game//! this makes it crashes
+        game
     );
     
     if(!window->handle)
@@ -67,17 +68,23 @@ void CreateGameWindow(Game* game, HINSTANCE hInstance, int nShowCmd)
 static void setInputState(Button* button, bool newState) {
     if(newState)
     {
-        if(!button->held) {
-            button->pressed = true;
-            button->held = true;
-            button->released = false;
-        }
+        button->pressed = true;
+        button->released = false;
     }
     else
     {
         button->pressed = false;
-        button->held = false;
         button->released = true;
+    }
+}
+
+static void setHeldInputState(Button* button, bool held) {
+    if(held) {
+        if(!button->held) {
+            button->held = true;
+        }
+    } else {
+        button->held = false;
     }
 }
 
@@ -142,25 +149,42 @@ LRESULT CALLBACK GameWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
         case WM_ERASEBKGND:
             return 1;
         case WM_LBUTTONDOWN:
-            setInputState(&self->mouse[MOUSE_LEFT], true);
-            return 0;
         case WM_LBUTTONUP:
-            setInputState(&self->mouse[MOUSE_LEFT], false);
-            return 0;
         case WM_RBUTTONDOWN:
-            setInputState(&self->mouse[MOUSE_RIGHT], true);
-            return 0;
         case WM_RBUTTONUP:
-            setInputState(&self->mouse[MOUSE_RIGHT], false);
-            return 0;
+        {
+            bool rBtn = (uMsg == WM_RBUTTONDOWN);
+            bool lBtn = ( uMsg == WM_LBUTTONDOWN);
+            
+            setInputState(&self->mouse.left, lBtn);
+            setInputState(&self->mouse.right, rBtn);
+            setHeldInputState(&self->mouse.right, rBtn);
+            setHeldInputState(&self->mouse.left, lBtn);
+            self->mouse.pos = (Vector2) {.x=GET_X_LPARAM(lParam), .y=GET_Y_LPARAM(lParam)}; 
+        }return 0;
+
+        case WM_MOUSEMOVE: 
+        {
+            self->mouse.pos = (Vector2) {.x=GET_X_LPARAM(lParam), .y=GET_Y_LPARAM(lParam)};
+        }return 0;
 
         case WM_KEYDOWN:
         case WM_KEYUP:
         {
-            bool pressed = (uMsg == WM_KEYDOWN);
+            bool held = (uMsg == WM_KEYDOWN);
+            bool released = (uMsg == WM_KEYUP);
+            bool initialPress = !(lParam & (1 << 30));
             for(KeyCode key = ARROW_UP; key < KEY_COUNT; key++) {
                 if(wParam == buttonValues[key]) {
-                    setInputState(&self->keyBoard[key], pressed);
+                    if(initialPress) {
+                        if(!released) {
+                            setInputState(&self->keyBoard[key], true);
+                        } else {
+                            setInputState(&self->keyBoard[key], false);
+                        }
+                    } else {
+                        setHeldInputState(&self->keyBoard[key], held);
+                    }
                 }
             }
         }return 0;
@@ -203,26 +227,28 @@ static const int buttonValues[KEY_COUNT] =
     VK_F3,'Z', 'Q', 'S', 'D'
 };
 
-static void resetInput(Button *buttons) {
+static void resetInputOnFocusLoss(Button *buttons) {
     ZeroMemory(buttons, sizeof(Button));
 }
 
 void setInputStateAfter() {
     if(!self->focused) {
-        resetInput(self->keyBoard);
+        resetInputOnFocusLoss(self->keyBoard);
+        resetInputOnFocusLoss(&self->mouse.left);
+        resetInputOnFocusLoss(&self->mouse.right);
         return;
     }
     for(KeyCode key = ARROW_UP ; key < KEY_COUNT ; key++) {
         self->keyBoard[key].pressed = false;
         self->keyBoard[key].released = false;
     }
-    for(MouseButton button = MOUSE_LEFT ; button < MOUSE_BUTTON_COUNT ; button++) {
-        self->mouse[button].pressed = false;
-        self->mouse[button].released = false;
-    }
+    self->mouse.left.pressed = false;
+    self->mouse.left.released = false;
+    self->mouse.right.pressed = false;
+    self->mouse.right.released = false;
 }
 
-void setInputContext(Input *ctx)
+void setInputContext(InputManager *ctx)
 {
     self = ctx;
 }
